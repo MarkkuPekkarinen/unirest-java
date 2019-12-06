@@ -33,7 +33,9 @@ import kong.unirest.json.JSONObject;
 import org.junit.Test;
 
 import static kong.unirest.HttpMethod.GET;
+import static kong.unirest.HttpMethod.POST;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class ClientTest extends Base {
 
@@ -106,8 +108,7 @@ public class ClientTest extends Base {
     public void noExpectation() {
         client.expect(GET, otherPath);
         assertException(() -> client.verifyAll(),
-                "A expectation was never invoked! GET http://other\n" +
-                        "Headers:\n");
+                "A expectation was never invoked! GET http://other\n");
     }
 
     @Test
@@ -213,6 +214,9 @@ public class ClientTest extends Base {
     @Test
     public void willPickTheBestMatchingQueryExpectation() {
         client.expect(GET, path)
+                .queryString("monster", "grover");
+
+        client.expect(GET, path)
                 .queryString("monster", "grover")
                 .queryString("fruit", "apples");
 
@@ -224,9 +228,42 @@ public class ClientTest extends Base {
                 .queryString("fruit", "apples")
                 .asEmpty();
 
-//        assertException(() -> client.verifyAll(),
-//                "A expectation was never invoked! GET http://basic\n" +
-//                        "Headers:\n" +
-//                        "monster: grover\n");
+        assertException(() -> client.verifyAll(),
+                "A expectation was never invoked! GET http://basic\n" +
+                        "Params:\n" +
+                        "monster: grover\n");
+    }
+
+    @Test
+    public void whenDuplicateExpectsExistUseTheLastOne() {
+        client.expect(GET, path)
+                .queryString("monster", "grover")
+                .thenReturn("one");
+
+        client.expect(GET, path)
+                .queryString("monster", "grover")
+                .thenReturn("two");
+
+        String result = uni.get(path)
+                .queryString("monster", "grover")
+                .asString()
+                .getBody();
+
+        assertEquals("two", result);
+
+        assertException(() -> client.verifyAll(),
+                "A expectation was never invoked! GET http://basic\n" +
+                        "Params:\n" +
+                        "monster: grover\n");
+    }
+
+    @Test
+    public void expectBody() {
+        client.expect(POST, path)
+                .body("foo")
+                .thenReturn("bar");
+
+        assertNull(uni.post(path).asString().getBody());
+        assertEquals("bar", uni.post(path).body("foo").asString().getBody());
     }
 }

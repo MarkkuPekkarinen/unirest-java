@@ -1,3 +1,26 @@
+## 3.10.00
+* Introduce new HttpStatus constants class for reference to Http response codes.
+* Switch the ApacheClient to use Apache's build in eviction monitor rather than a custom one.
+* Add native default support for various Java DateTime types for the built in object mapper. All types will serialize to ISO-8601. Parsing from json will attempt various ISO variants.
+   * Types Supported:
+      * ZonedDateTime
+      * LocalDateTime
+      * LocalDate
+      * Calendar
+      * Date
+
+## 3.9.00 
+* Issue #362 when passing a string to the body method for a post, route as a string rather than passing to the object mapper.
+* Issue #362 when passing a native Unirest JSON Type to the body method for a post, route as a Json Type rather than passing to the object mapper.
+* issue #363 support multiple interceptors
+
+## 3.8.06
+* issue #359 make the default object mapper lazy so gson can be excluded
+
+### 3.8.01-.05 (RIP)
+   * sacrificed to an angry Nexus god.
+   * Nexus deploy plugin upgraded
+
 ## 3.8.00 
 * Minor updates to org.apache.httpcomponents to 4.5.12
 * Upgrade Jackson to 2.11.0 

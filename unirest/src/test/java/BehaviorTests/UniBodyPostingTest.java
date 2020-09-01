@@ -25,10 +25,7 @@
 
 package BehaviorTests;
 
-import kong.unirest.JsonNode;
-import kong.unirest.MockCallback;
-import kong.unirest.Unirest;
-import kong.unirest.UnirestConfigException;
+import kong.unirest.*;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
 import org.junit.jupiter.api.Test;
@@ -36,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 
 import static kong.unirest.TestUtil.assertException;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class UniBodyPostingTest extends BddTest {
     @Test
@@ -166,4 +164,69 @@ public class UniBodyPostingTest extends BddTest {
                 UnirestConfigException.class,
                 "No Object Mapper Configured. Please config one with Unirest.config().setObjectMapper");
     }
+
+    @Test
+    void theRequestBodyIsAString() {
+        RequestBodyEntity request = Unirest.post(MockServer.POST)
+                .basicAuth("foo", "bar")
+                .header("Content-Type", "application/json")
+                .queryString("foo", "bar")
+                .body("{\"body\": \"sample\"}");
+
+        Object value = request.getBody().get().uniPart().getValue();
+        assertEquals("{\"body\": \"sample\"}", value);
+    }
+
+    @Test
+    void stringPassedToObjectGetsPassedToString() {
+        Object body = "{\"body\": \"sample\"}";
+        RequestBodyEntity request = Unirest.post(MockServer.POST)
+                .basicAuth("foo", "bar")
+                .header("Content-Type", "application/json")
+                .queryString("foo", "bar")
+                .body(body);
+
+        Object value = request.getBody().get().uniPart().getValue();
+        assertEquals("{\"body\": \"sample\"}", value);
+    }
+
+    @Test
+    void jsonNodePassedToObjectGetsPassedToString() {
+        Object body = new JsonNode("{\"body\": \"sample\"}");
+        RequestBodyEntity request = Unirest.post(MockServer.POST)
+                .basicAuth("foo", "bar")
+                .header("Content-Type", "application/json")
+                .queryString("foo", "bar")
+                .body(body);
+
+        Object value = request.getBody().get().uniPart().getValue();
+        assertEquals("{\"body\":\"sample\"}", value);
+    }
+
+    @Test
+    void jsonObjectPassedToObjectGetsPassedToString() {
+        Object body = new JSONObject("{\"body\": \"sample\"}");
+        RequestBodyEntity request = Unirest.post(MockServer.POST)
+                .basicAuth("foo", "bar")
+                .header("Content-Type", "application/json")
+                .queryString("foo", "bar")
+                .body(body);
+
+        Object value = request.getBody().get().uniPart().getValue();
+        assertEquals("{\"body\":\"sample\"}", value);
+    }
+
+    @Test
+    void jsonArrayPassedToObjectGetsPassedToString() {
+        Object body = new JSONArray("[\"body\", \"sample\"]");
+        RequestBodyEntity request = Unirest.post(MockServer.POST)
+                .basicAuth("foo", "bar")
+                .header("Content-Type", "application/json")
+                .queryString("foo", "bar")
+                .body(body);
+
+        Object value = request.getBody().get().uniPart().getValue();
+        assertEquals("[\"body\",\"sample\"]", value);
+    }
+
 }

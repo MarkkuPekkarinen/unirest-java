@@ -41,8 +41,6 @@ import java.io.FileInputStream;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static spark.Spark.*;
 
@@ -57,7 +55,7 @@ public class MockServer {
 	private static String responseBody;
 	public static final int PORT = 4567;
 	public static final String HOST = "http://localhost:" + PORT;
-	public static final String WINDOWS_LATIN_1_FILE = HOST + "data/cp1250.txt";
+	public static final String WINDOWS_LATIN_1_FILE = HOST + "/data/cp1250.txt";
 	public static final String REDIRECT = HOST + "/redirect";
 	public static final String SPARKLE = HOST + "/sparkle/{spark}/yippy";
 	public static final String BINARYFILE = HOST + "/binary";
@@ -93,8 +91,8 @@ public class MockServer {
 	}
 
 	static {
+		Spark.staticFileLocation("public/");
 		port(PORT);
-		Spark.staticFileLocation("data");
 		Spark.notFound(MockServer::notFound);
 		Spark.before((p,f) -> timesCalled++);
 		delete("/delete", MockServer::jsonResponse);
@@ -134,11 +132,10 @@ public class MockServer {
 		sparks.put("pathInfo()", request.pathInfo());
 		sparks.put("port()", String.valueOf(request.port()));
 		sparks.put("protocol()", request.protocol());
-		sparks.put("requestMethod()", request.requestMethod());
 		sparks.put("scheme()", request.scheme());
 		sparks.put("servletPath()", request.servletPath());
 		sparks.put("requestMethod()", request.requestMethod());
-		sparks.put("splat()", Stream.of(request.splat()).collect(Collectors.joining(" | ")));
+		sparks.put("splat()", String.join(" | ", request.splat()));
 		sparks.put("uri()", request.uri());
 		sparks.put("url()", request.url());
 		sparks.put("userAgent()", request.userAgent());
@@ -258,10 +255,6 @@ public class MockServer {
 
 	public static void expectedPages(int expected) {
 		pages = expected;
-	}
-
-	public static void main(String[] args){
-
 	}
 
 	public static void expectCookie(String name, String value) {

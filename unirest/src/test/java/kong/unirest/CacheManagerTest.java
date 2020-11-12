@@ -80,14 +80,14 @@ class CacheManagerTest {
     @Test
     void responsesAreDifferentForDifferentTypes() {
         assertNotSame(
-                cache.wrap(client).request(new HttpRequestNoBody(config, GET, "/"), r -> new StringResponse(new MockRawResponse(), ""), String.class),
-                cache.wrap(client).request(new HttpRequestNoBody(config, GET, "/"), r -> new BasicResponse(new MockRawResponse(), ""), Empty.class)
+                cache.wrap(client).request(new HttpRequestNoBody(config, GET, "/"), r -> new StringResponse(new TestRawResponse(config), ""), String.class),
+                cache.wrap(client).request(new HttpRequestNoBody(config, GET, "/"), r -> new BasicResponse(new TestRawResponse(config), ""), Empty.class)
         );
 
         assertEquals(2, client.invokes);
     }
 
-    private class MockClient implements Client, AsyncClient {
+    private static class MockClient implements Client, AsyncClient {
         public int invokes = 0;
         @Override
         public <T> CompletableFuture<HttpResponse<T>> request(HttpRequest request, Function<RawResponse, HttpResponse<T>> transformer, CompletableFuture<HttpResponse<T>> callback) {

@@ -1,3 +1,38 @@
+## 3.11.05
+*  issue #383 some problems with relocated packages.
+
+## 3.11.04
+* issue #383 missing some relocations for uber-jars
+* PR #381 support for custom ciphers and protocols for https requests
+* Mock server should call into metrics just like the real thing
+* CI/CD improvements
+
+## 3.11.03
+* issue #378 make getDefaultBaseUrl public
+* issue #376 make sane toString representations for body parts.
+* issue #376 add a method for getting a particular body field
+* issue #376 added a ```asString()``` to the request summary to get string of the request so far suitable for logging
+* issue #379 Interceptors are not called when using MockClient 
+
+## 3.11.02
+* Issue #373 MockClient should pass the config to the response.
+* Issue #374 Add methods to add default cookies to the config
+* Issue #375 Do not Escape HTML in JSON 
+
+## 3.11.01
+* Upgrade Apache Http Client to 4.5.13 (fixes incorrect handling of malformed authority component in request URIs.)
+* Upgrade Jackson to 2.11.3 for the Jackson object mapper module
+* Upgrade various test and ci dependencies
+
+## 3.11.00
+* issue #368 honor hosts header when set by consumer. This mimics behavior in Postman
+* issue #370 expose copyOptions for file downloads
+* issue #265 New Mocking framework! See the unirest-mocks module.
+* issue #305 adding a noCharset() method as a more obvious way  to do noCharset(null)
+* Added Documentation
+* Merged the request ```body(JSONObject)``` amd ```body(JSONArray)``` into common ```body(JSONElement)``` method
+* Filled in some missing methods on RequestBodyEntity from HttpRequestWithBody to fully allow chaining in different orders.
+
 ## 3.10.00
 * Introduce new HttpStatus constants class for reference to Http response codes.
 * Switch the ApacheClient to use Apache's build in eviction monitor rather than a custom one.

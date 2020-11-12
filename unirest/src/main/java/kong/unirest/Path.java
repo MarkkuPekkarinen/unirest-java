@@ -48,6 +48,10 @@ class Path {
         }
     }
 
+    public Path(String url) {
+        this(url, null);
+    }
+
     public void param(Map<String, Object> params) {
         params.forEach((key, value) -> param(key, String.valueOf(value)));
     }
@@ -112,6 +116,17 @@ class Path {
         return rawPath;
     }
 
+    public String baseUrl() {
+        if(url.contains("?")){
+            return url.substring(0, url.indexOf("?"));
+        }
+        return url;
+    }
+
+    public String getQueryString(){
+        return url.substring(url.indexOf("?")+1);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) { return true; }
@@ -125,3 +140,4 @@ class Path {
         return Objects.hash(url);
     }
 }
+

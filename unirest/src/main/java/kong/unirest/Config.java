@@ -37,10 +37,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -82,6 +79,8 @@ public class Config {
     private UniMetric metrics = new NoopMetric();
     private long ttl = -1;
     private SSLContext sslContext;
+    private String[] ciphers;
+    private String[] protocols;
     private CompoundInterceptor interceptor = new CompoundInterceptor();
     private HostnameVerifier hostnameVerifier;
     private String defaultBaseUrl;
@@ -108,7 +107,10 @@ public class Config {
         keystore = null;
         keystorePassword = null;
         sslContext = null;
+        ciphers = null;
+        protocols = null;
         interceptor = new CompoundInterceptor();
+
         this.objectMapper = Optional.of(new JsonObjectMapper());
         try {
             asyncBuilder = ApacheAsyncClient::new;
@@ -138,7 +140,7 @@ public class Config {
      * @return this config object
      */
     public Config httpClient(Client httpClient) {
-        client = Optional.of(httpClient);
+        client = Optional.ofNullable(httpClient);
         return this;
     }
 
@@ -158,7 +160,9 @@ public class Config {
      *
      * @param value Custom CloseableHttpAsyncClient implementation
      * @return this config object
+     * @deprecated use asyncClient(AsyncClient value)
      */
+    @Deprecated
     public Config asyncClient(HttpAsyncClient value) {
         this.asyncClient = Optional.of(new ApacheAsyncClient(value, this, null, null));
         return this;
@@ -171,7 +175,7 @@ public class Config {
      * @return this config object
      */
     public Config asyncClient(AsyncClient value) {
-        asyncClient = Optional.of(value);
+        asyncClient = Optional.ofNullable(value);
         return this;
     }
 
@@ -253,6 +257,26 @@ public class Config {
      */
     public Config hostnameVerifier(HostnameVerifier value) {
         this.hostnameVerifier = value;
+        return this;
+    }
+
+    /**
+     * Set a custom array of ciphers
+     * @param values the array of ciphers
+     * @return this config object
+     */
+    public Config ciphers(String... values) {
+        this.ciphers = values;
+        return this;
+    }
+
+    /**
+     * Set a custom array of protocols
+     * @param values the array of protocols
+     * @return this config object
+     */
+    public Config protocols(String... values) {
+        this.protocols = values;
         return this;
     }
 
@@ -389,6 +413,26 @@ public class Config {
      */
     public Config addDefaultHeader(String name, String value) {
         headers.add(name, value);
+        return this;
+    }
+
+    /**
+     * Adds a default cookie to be added to all requests with this config
+     * @param name the name of the cookie
+     * @param value the value of the cookie
+     * @return this config object
+     */
+    public Config addDefaultCookie(String name, String value) {
+        return addDefaultCookie(new Cookie(name, value));
+    }
+
+    /**
+     * Adds a default cookie to be added to all requests with this config
+     * @param cookie the cookie
+     * @return this config object
+     */
+    public Config addDefaultCookie(Cookie cookie) {
+        this.headers.cookie(cookie);
         return this;
     }
 
@@ -620,7 +664,7 @@ public class Config {
      * for example. Setting a default path of 'http://somwhere'
      * and then calling Unirest with Unirest.get('/place')
      * will result in a path of 'https://somwehre/place'
-     * @param value
+     * @param value the base URL to use
      * @return  this config object
      */
     public Config defaultBaseUrl(String value) {
@@ -829,54 +873,99 @@ public class Config {
         }
     }
 
+    /**
+     * @return currently configured Apache HttpRequestInterceptors
+     * @deprecated use Unirest Interceptors instead
+     */
+    @Deprecated
     public List<HttpRequestInterceptor> getInterceptor() {
         return apacheinterceptors;
     }
 
+    /**
+     * @return the configured proxy configuration
+     */
     public Proxy getProxy() {
         return proxy;
     }
 
+    /**
+     * @return if the system will pick up system properties (default is false)
+     */
     public boolean useSystemProperties() {
         return this.useSystemProperties;
     }
 
+    /**
+     * @return the default encoding (UTF-8 is the default default)
+     */
     public String getDefaultResponseEncoding() {
         return defaultResponseEncoding;
     }
 
+    /**
+     * @return if request compression is on (default is true)
+     */
     public boolean isRequestCompressionOn() {
         return requestCompressionOn;
     }
 
+    /**
+     * @return if automatic retries are on (default is false)
+     */
     public boolean isAutomaticRetries() {
         return automaticRetries;
     }
 
+    /**
+     * Will unirest verify the SSL?
+     * You should only do this in non-prod environments.
+     * Default is true
+     * @return if unirest will verify the SSL
+     */
     public boolean isVerifySsl() {
         return verifySsl;
     }
 
+    /**
+     * @return if shutdown hooks configure automatically (default is false)
+     */
     public boolean shouldAddShutdownHook() {
         return addShutdownHook;
     }
 
+    /**
+     * @return the configured Cookie Spec
+     */
     public String getCookieSpec() {
         return cookieSpec;
     }
 
+    /**
+     * @return the currently configured UniMetric object
+     */
     public UniMetric getMetric() {
         return metrics;
     }
 
+    /**
+     * @return the maximum life span of persistent connections regardless of their expiration setting.
+     */
     public long getTTL() {
         return ttl;
     }
 
+    /**
+     * @return the currently configured Interceptor
+     */
     public Interceptor getUniInterceptor() {
         return interceptor;
     }
 
+    /**
+     * @return  The currently configred error handler
+     * @deprecated use interceptors instead
+     */
     @Deprecated
     public Consumer<HttpResponse<?>> getErrorHandler() {
         return getDefaultInterceptor()
@@ -884,6 +973,9 @@ public class Config {
                 .orElseGet(() -> r -> {});
     }
 
+    /**
+     * @return the SSL connection configuration
+     */
     public SSLContext getSslContext() {
         return sslContext;
     }
@@ -895,11 +987,31 @@ public class Config {
                 .findFirst();
     }
 
+    /**
+     * @return the current HostnameVerifier
+     */
     public HostnameVerifier getHostnameVerifier() {
         return hostnameVerifier;
     }
 
-    String getDefaultBaseUrl() {
+    /**
+     * @return the ciphers for the SSL connection configuration
+     */
+    public String[] getCiphers() {
+        return ciphers;
+    }
+
+    /**
+     * @return the protocols for the SSL connection configuration
+     */
+    public String[] getProtocols() {
+        return protocols;
+    }
+
+    /**
+     * @return the default base URL
+     */
+    public String getDefaultBaseUrl() {
         return this.defaultBaseUrl;
     }
 }

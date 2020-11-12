@@ -23,7 +23,33 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package kong.unirest;
+package kong.tests;
 
-public class NotImplimented extends RuntimeException {
+import kong.unirest.HttpMethod;
+import kong.unirest.Unirest;
+import org.junit.jupiter.api.Test;
+
+import static kong.unirest.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ErrorTest extends Base {
+
+    @Test
+    void mapError() {
+        client.expect(HttpMethod.GET, path)
+                .thenReturn(new ErrorObj("Boo!"))
+                .withStatus(INTERNAL_SERVER_ERROR);
+
+        ErrorObj err = Unirest.get(path).asJson().mapError(ErrorObj.class);
+
+        assertEquals("Boo!", err.say);
+    }
+
+    private static class ErrorObj {
+        public String say;
+
+        public ErrorObj(String say) {
+            this.say = say;
+        }
+    }
 }

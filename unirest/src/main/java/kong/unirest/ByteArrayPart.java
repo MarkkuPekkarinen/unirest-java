@@ -26,7 +26,7 @@
 package kong.unirest;
 
 
-public class ByteArrayPart extends BodyPart {
+public class ByteArrayPart extends BodyPart<byte[]> {
     private final String fileName;
 
     ByteArrayPart(String name, byte[] bytes, ContentType contentType, String fileName) {
@@ -42,5 +42,10 @@ public class ByteArrayPart extends BodyPart {
     @Override
     public boolean isFile() {
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s=%s", getName(), fileName);
     }
 }

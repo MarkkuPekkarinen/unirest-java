@@ -27,7 +27,7 @@ package kong.unirest;
 
 import java.io.File;
 
-class FilePart extends BodyPart {
+class FilePart extends BodyPart<File> {
     private String fileName;
 
     public FilePart(File file, String name) {
@@ -47,5 +47,10 @@ class FilePart extends BodyPart {
     @Override
     public String getFileName(){
         return null;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s=%s", getName(), fileName);
     }
 }

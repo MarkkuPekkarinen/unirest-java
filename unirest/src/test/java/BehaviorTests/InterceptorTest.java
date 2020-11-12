@@ -27,6 +27,7 @@ package BehaviorTests;
 
 import kong.unirest.*;
 import org.apache.http.HttpException;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -34,18 +35,21 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
+import static com.google.common.collect.Sets.newHashSet;
+import static kong.unirest.TestUtil.rezFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class InterceptorTest extends BddTest {
+class InterceptorTest extends BddTest {
 
     private UniInterceptor interceptor;
-    private String  ioErrorMessage = "Something horrible happened";;
+    private final String ioErrorMessage = "Something horrible happened";;
 
     @BeforeEach
     public void setUp() {
@@ -54,7 +58,7 @@ public class InterceptorTest extends BddTest {
     }
 
     @Test
-    public void canAddInterceptor() {
+    void canAddInterceptor() {
         Unirest.config().interceptor(interceptor);
         Unirest.get(MockServer.GET).asObject(RequestCapture.class);
 
@@ -63,7 +67,7 @@ public class InterceptorTest extends BddTest {
     }
 
     @Test
-    public void canAddTwoInterceptor() {
+    void canAddTwoInterceptor() {
         Unirest.config().interceptor(interceptor);
         Unirest.config().interceptor(new UniInterceptor("fruit", "grapes"));
         Unirest.get(MockServer.GET).asObject(RequestCapture.class);
@@ -73,7 +77,7 @@ public class InterceptorTest extends BddTest {
     }
 
     @Test
-    public void canAddInterceptorToAsync() throws ExecutionException, InterruptedException {
+    void canAddInterceptorToAsync() throws ExecutionException, InterruptedException {
         Unirest.config().interceptor(interceptor);
 
         Unirest.get(MockServer.GET)
@@ -84,7 +88,7 @@ public class InterceptorTest extends BddTest {
     }
 
     @Test
-    public void totalFailure() throws Exception {
+    void totalFailure() throws Exception {
         Unirest.config().httpClient(getFailureClient()).interceptor(interceptor);
 
         TestUtil.assertException(() -> Unirest.get(MockServer.GET).asEmpty(),
@@ -93,7 +97,7 @@ public class InterceptorTest extends BddTest {
     }
 
     @Test
-    public void canReturnEmptyResultRatherThanThrow() throws Exception {
+    void canReturnEmptyResultRatherThanThrow() throws Exception {
         Unirest.config().httpClient(getFailureClient()).interceptor(interceptor);
         interceptor.failResponse = true;
 
@@ -104,7 +108,7 @@ public class InterceptorTest extends BddTest {
     }
 
     @Test
-    public void totalAsyncFailure() throws Exception {
+    void totalAsyncFailure() throws Exception {
         Unirest.config().addInterceptor((r, c) -> {
             throw new IOException(ioErrorMessage);
         }).interceptor(interceptor);
@@ -115,7 +119,7 @@ public class InterceptorTest extends BddTest {
     }
 
     @Test
-    public void totalAsyncFailure_Recovery() throws Exception {
+    void totalAsyncFailure_Recovery() throws Exception {
         interceptor.failResponse = true;
         Unirest.config().addInterceptor((r, c) -> {
             throw new IOException(ioErrorMessage);
@@ -129,12 +133,13 @@ public class InterceptorTest extends BddTest {
 
     private HttpClient getFailureClient() throws IOException {
         HttpClient client = mock(HttpClient.class);
+        when(client.execute(any(HttpHost.class), any(HttpUriRequest.class))).thenThrow(new IOException(ioErrorMessage));
         when(client.execute(any(HttpUriRequest.class))).thenThrow(new IOException(ioErrorMessage));
         return client;
     }
 
     @Test @Deprecated
-    public void canAddApacheInterceptor() {
+    void canAddApacheInterceptor() {
         Unirest.config().addInterceptor(new TestInterceptor());
 
         Unirest.get(MockServer.GET)
@@ -144,7 +149,7 @@ public class InterceptorTest extends BddTest {
     }
 
     @Test @Deprecated
-    public void canAddApacheInterceptorToAsync() throws ExecutionException, InterruptedException {
+    void canAddApacheInterceptorToAsync() throws ExecutionException, InterruptedException {
         Unirest.config().addInterceptor(new TestInterceptor());
 
         Unirest.get(MockServer.GET)
@@ -152,6 +157,26 @@ public class InterceptorTest extends BddTest {
                 .get()
                 .getBody()
                 .assertHeader("x-custom", "foo");
+    }
+
+    @Test
+    void loggingBodyPartsExample() {
+        final Set<String> values = new HashSet<>();
+        Unirest.config().interceptor(new Interceptor() {
+            @Override
+            public void onRequest(HttpRequest<?> request, Config config) {
+                request.getBody().ifPresent(b ->
+                        b.multiParts().forEach(part ->
+                                values.add(part.toString())));
+            }
+        });
+
+        Unirest.post(MockServer.POST)
+                .field("fruit", "apples")
+                .field("file", rezFile("/spidey.jpg"))
+                .asEmpty();
+
+        assertEquals(newHashSet("file=spidey.jpg","fruit=apples"), values);
     }
 
     private class TestInterceptor implements HttpRequestInterceptor {

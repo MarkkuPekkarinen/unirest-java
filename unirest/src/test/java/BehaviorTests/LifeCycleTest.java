@@ -48,12 +48,12 @@ import java.util.stream.IntStream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class LifeCycleTest extends BddTest {
+class LifeCycleTest extends BddTest {
 
     @Mock
     private CloseableHttpClient httpc;
@@ -74,7 +74,7 @@ public class LifeCycleTest extends BddTest {
 
 
     @Test
-    public void ifClientsAreAlreadyRunningCanAddShutdownHooks() throws Exception  {
+    void ifClientsAreAlreadyRunningCanAddShutdownHooks() throws Exception  {
         assertShutdownHooks(0);
 
         Unirest.get(MockServer.GET).asEmpty();
@@ -86,7 +86,7 @@ public class LifeCycleTest extends BddTest {
     }
 
     @Test
-    public void canAddShutdownHooks() throws Exception {
+    void canAddShutdownHooks() throws Exception {
         assertShutdownHooks(0);
 
         Unirest.config().addShutdownHook(true).getClient();
@@ -96,7 +96,7 @@ public class LifeCycleTest extends BddTest {
     }
 
     @Test
-    public void settingClientAfterClientHasAlreadyBeenSet() {
+    void settingClientAfterClientHasAlreadyBeenSet() {
         HttpClientMock httpClientMock = new HttpClientMock();
         httpClientMock.onGet("http://localhost/getme").doReturn(202, "Howdy Ho!");
         assertEquals(200, Unirest.get(MockServer.GET).asString().getStatus());
@@ -107,7 +107,7 @@ public class LifeCycleTest extends BddTest {
     }
 
     @Test
-    public void willNotShutdownInactiveAsyncClient() throws IOException {
+    void willNotShutdownInactiveAsyncClient() throws IOException {
         CloseableHttpAsyncClient asyncClient = mock(CloseableHttpAsyncClient.class);
         when(asyncClient.isRunning()).thenReturn(false);
 
@@ -119,7 +119,7 @@ public class LifeCycleTest extends BddTest {
     }
 
     @Test
-    public void canDetectIfSystemIsRunning() {
+    void canDetectIfSystemIsRunning() {
         Unirest.get(MockServer.GET).asEmpty();
         assertTrue(Unirest.isRunning());
 
@@ -131,7 +131,7 @@ public class LifeCycleTest extends BddTest {
     }
 
     @Test
-    public void willReinitIfLibraryIsUsedAfterShutdown() {
+    void willReinitIfLibraryIsUsedAfterShutdown() {
         Unirest.shutDown();
         assertFalse(Unirest.isRunning());
 
@@ -140,24 +140,24 @@ public class LifeCycleTest extends BddTest {
     }
 
     @Test
-    public void canGetTheCommonInstanceOfUnirest(){
+    void canGetTheCommonInstanceOfUnirest(){
         assertSame(Unirest.primaryInstance(), Unirest.primaryInstance());
         assertNotSame(Unirest.primaryInstance(), Unirest.spawnInstance());
         assertNotSame(Unirest.spawnInstance(), Unirest.spawnInstance());
     }
 
     @Test
-    public void shouldReuseThreadPool() {
+    void shouldReuseThreadPool() {
         int startingCount = ManagementFactory.getThreadMXBean().getThreadCount();
         IntStream.range(0,100).forEach(i -> {
             Unirest.config().reset().getClient();
             Unirest.config().getAsyncClient();
         });
-        assertThat(ManagementFactory.getThreadMXBean().getThreadCount(), is(lessThan(startingCount + 10)));
+        assertThat(ManagementFactory.getThreadMXBean().getThreadCount(), is(lessThanOrEqualTo(startingCount + 10)));
     }
 
     @Test
-    public void testUnirestInstanceIsShutdownWhenClosed() {
+    void testUnirestInstanceIsShutdownWhenClosed() {
         UnirestInstance reference;
         try (UnirestInstance instance = new UnirestInstance(new Config().setDefaultHeader("foo", "bar"))) {
             reference = instance;

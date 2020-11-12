@@ -86,7 +86,7 @@ public class TestUtil {
             if (!e.getCause().getClass().isAssignableFrom(exClass)) {
                 fail("Expected wrong exception type \n Expected: " + exClass + "\n but got " + e.getCause().getClass());
             }
-            assertEquals("Wrong Error Message", message, e.getMessage());
+            assertEquals(message, e.getMessage(), "Wrong Error Message");
         }
     }
 
@@ -192,18 +192,7 @@ public class TestUtil {
 
     @FunctionalInterface
     public interface ExRunnable {
-        /**
-         * When an object implementing interface <code>Runnable</code> is used
-         * to create a thread, starting the thread causes the object's
-         * <code>run</code> method to be called in that separately executing
-         * thread.
-         * <p>
-         * The general contract of the method <code>run</code> is that it may
-         * take any action whatsoever.
-         *
-         * @see     java.lang.Thread#run()
-         */
-        public abstract void run() throws Exception;
+       void run() throws Exception;
     }
 
 }

@@ -35,8 +35,8 @@ import java.util.stream.StreamSupport;
 
 public abstract class JSONElement {
     protected static transient final ToObjectMapper MAPPER = new ToObjectMapper();
-    private static transient final Gson GSON = new GsonBuilder().disableHtmlEscaping().serializeNulls().create();
-    private static transient final Gson PRETTY_GSON = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
+    private static transient final Gson GSON = CoreFactory.getCore().create();
+    private static transient final Gson PRETTY_GSON = CoreFactory.getCore().setPrettyPrinting().create();
 
     private final JsonElement element;
 
@@ -111,9 +111,8 @@ public abstract class JSONElement {
         return element;
     }
 
-
     static JsonObject toJsonObject(Map map){
-        return fromJson(JSONElement.toJson(map), JsonObject.class);
+        return JSONElement.toTree(map).getAsJsonObject();
     }
 
     static <T> T fromJson(String json, Class<T> classOfT) {
@@ -126,6 +125,10 @@ public abstract class JSONElement {
 
     static String toJson(Object collection) {
         return GSON.toJson(collection);
+    }
+
+    static JsonElement toTree(Object obj){
+        return GSON.toJsonTree(obj);
     }
 
     static void write(JsonElement obj, Writer sw) {

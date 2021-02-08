@@ -65,7 +65,7 @@ public class Config {
     private int maxPerRoute;
     private boolean followRedirects;
     private boolean cookieManagement;
-    private boolean useSystemProperties;
+    private boolean useSystemProperties = true;
     private String defaultResponseEncoding = StandardCharsets.UTF_8.name();
     private Function<Config, AsyncClient> asyncBuilder;
     private Function<Config, Client> clientBuilder;
@@ -100,6 +100,7 @@ public class Config {
         maxTotal = DEFAULT_MAX_CONNECTIONS;
         maxPerRoute = DEFAULT_MAX_PER_ROUTE;
         followRedirects = true;
+        useSystemProperties = true;
         cookieManagement = true;
         requestCompressionOn = true;
         automaticRetries = true;

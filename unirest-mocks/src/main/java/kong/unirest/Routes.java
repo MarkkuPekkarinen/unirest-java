@@ -54,17 +54,17 @@ class Routes implements Assert {
     boolean matches(HttpRequest request) {
         Path p = new Path(request.getUrl());
         return this.method.equals(request.getHttpMethod())
-                && this.path.equalsIgnoreCase(p.baseUrl());
+                && this.path == null || this.path.equalsIgnoreCase(p.baseUrl());
     }
 
     RawResponse exchange(HttpRequest request, Config config) {
         return getBestMatch(request)
-                .map(invocation -> invocation.getResponse(config))
+                .map(invocation -> invocation.getResponse(config, request))
                 .orElseGet(() -> {
                     Invocation i = new Invocation(this);
                     i.log(request);
                     invokes.add(i);
-                    return i.getResponse(config);
+                    return i.getResponse(config, request);
                 });
     }
 

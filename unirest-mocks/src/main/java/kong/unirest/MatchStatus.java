@@ -23,36 +23,36 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package BehaviorTests;
+package kong.unirest;
 
+/**
+ * Indicates a successful match and a description of the failure (if any)
+ */
+public class MatchStatus {
+    private final boolean isSuccess;
+    private final String description;
 
-import kong.unirest.Client;
-import kong.unirest.HttpRequest;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
-import org.junit.jupiter.api.Test;
-
-import java.util.function.Function;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-class CustomClientTest extends BddTest {
-
-    @Test
-    void settingACustomClient() {
-        Client client = mock(Client.class);;
-
-        HttpResponse mock = mock(HttpResponse.class);
-        when(client.request(any(HttpRequest.class),
-                any(Function.class),
-                any(Class.class))).thenReturn(mock);
-        Unirest.config().httpClient(client);
-
-        assertEquals(mock, Unirest.get("http://localhost/getme").asEmpty());
+    /**
+     * Contruct a Match status
+     * @param isSuccess indicates success
+     * @param description a failure description
+     */
+    public MatchStatus(boolean isSuccess, String description) {
+        this.isSuccess = isSuccess;
+        this.description = description;
     }
 
+    /**
+     * @return Was it successful or not?
+     */
+    public boolean isSuccess(){
+        return isSuccess;
+    }
 
+    /**
+     * @return a description of the failure (if any) or null
+     */
+    public String getDescription() {
+        return description;
+    }
 }

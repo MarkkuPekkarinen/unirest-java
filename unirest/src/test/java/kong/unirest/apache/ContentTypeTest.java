@@ -23,52 +23,40 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package kong.tests;
+package kong.unirest.apache;
 
-import kong.unirest.JsonObjectMapper;
-import kong.unirest.MockClient;
-import kong.unirest.Unirest;
-import kong.unirest.UnirestAssertion;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+
+import kong.unirest.ContentType;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
-public class Base {
-    protected MockClient client;
-    protected String path = "http://basic";;
-    protected String otherPath = "http://other";;
+class ContentTypeTest {
 
-    @BeforeEach
-    public void setUp() {
-        client = MockClient.register();
-        Unirest.config().setObjectMapper(new JsonObjectMapper());
+    @Test
+    void contentTypeWithEncoding() {
+        verifySame(org.apache.http.entity.ContentType.APPLICATION_ATOM_XML,
+                ContentType.APPLICATION_ATOM_XML);
     }
 
-    @AfterEach
-    void tearDown() {
-        MockClient.clear();
+    @Test
+    void imageTypes() {
+        verifySame(org.apache.http.entity.ContentType.IMAGE_GIF,
+                ContentType.IMAGE_GIF);
     }
 
-    public static void assertException(ExRunnable runnable, String message) {
-        try{
-            runnable.run();
-            fail("Expected exception but got none.");
-        } catch (UnirestAssertion e){
-            assertEquals(message, e.getMessage(), "Wrong Error Message");
-        }
+    @Test
+    void wildCard() {
+        verifySame(org.apache.http.entity.ContentType.WILDCARD,
+                ContentType.WILDCARD);
     }
 
-    public static void assertException(ExRunnable runnable) {
-        try{
-            runnable.run();
-            fail("Expected exception but got none.");
-        } catch (UnirestAssertion ignored){ }
-    }
-
-    @FunctionalInterface
-    public interface ExRunnable {
-        void run() throws Error;
+    private void verifySame(org.apache.http.entity.ContentType apache, ContentType unirest) {
+        assertEquals(
+                apache.toString(),
+                unirest.toString()
+        );
+        assertEquals(apache.toString(),
+                org.apache.http.entity.ContentType.parse(unirest.toString()).toString());
     }
 }

@@ -26,10 +26,8 @@
 package BehaviorTests;
 
 import kong.unirest.HttpRequestSummary;
+import kong.unirest.TestUtil;
 import kong.unirest.Unirest;
-import org.apache.http.HttpHost;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpRequestBase;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -37,10 +35,7 @@ import java.util.HashMap;
 import java.util.function.Function;
 
 import static BehaviorTests.MockServer.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -131,11 +126,8 @@ class MetricsTest extends BddTest {
 
     @Test
     void errorHandling() throws Exception {
-        HttpClient mock = mock(HttpClient.class);
-        when(mock.execute(any(HttpRequestBase.class))).thenThrow(new RuntimeException("boo"));
-        when(mock.execute(any(HttpHost.class), any(HttpRequestBase.class))).thenThrow(new RuntimeException("boo"));
         MyMetric metric = new MyMetric(HttpRequestSummary::getUrl);
-        Unirest.config().reset().httpClient(mock).instrumentWith(metric);
+        Unirest.config().reset().httpClient(TestUtil.getFailureClient()).instrumentWith(metric);
 
         try {
             Unirest.get(GET).asEmpty();
@@ -143,7 +135,7 @@ class MetricsTest extends BddTest {
 
         }
 
-        assertEquals("boo", metric.routes.get(GET).get(0).e.getMessage());
+        assertEquals("Something horrible happened", metric.routes.get(GET).get(0).e.getMessage());
     }
 
     @Test @Disabled
@@ -172,7 +164,7 @@ class MetricsTest extends BddTest {
 
         Unirest.get(GET).asEmpty();
 
-        assertThat(exTime, greaterThan(0L));
+        assertTrue(exTime > 0L);
     }
 
     @Test

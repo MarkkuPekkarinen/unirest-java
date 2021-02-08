@@ -33,7 +33,6 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Sets;
 import kong.unirest.*;
-import org.apache.http.client.utils.URLEncodedUtils;
 import spark.Request;
 
 import javax.servlet.MultipartConfigElement;
@@ -48,8 +47,6 @@ import java.util.stream.Stream;
 
 import static java.lang.System.getProperty;
 import static kong.unirest.JsonPatchRequest.CONTENT_TYPE;
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RequestCapture {
@@ -100,7 +97,8 @@ public class RequestCapture {
     }
 
     private void parseBodyToFormParams() {
-        URLEncodedUtils.parse(this.body, StandardCharsets.UTF_8)
+        QueryParams.fromBody(this.body)
+                .getQueryParams()
                 .forEach(p -> {
                     params.put(p.getName(), p.getValue());
                 });
@@ -169,12 +167,13 @@ public class RequestCapture {
 
     public RequestCapture assertHeader(String key, String value) {
         assertTrue(headers.containsKey(key), String.format("Expect header of '%s' but none was present", key));
-        assertThat("Expected Header Value Failed", headers.get(key), hasItem(value));
+        assertTrue(headers.get(key).contains(value), "Expected Header Value Failed: " + value);
         return this;
     }
 
     public RequestCapture assertParam(String key, String value) {
-        assertThat("Expected Query or Form value", params.get(key), hasItem(value));
+        assertTrue(params.containsKey(key), String.format("Expect param of '%s' but none was present", key));
+        assertTrue(params.get(key).contains(value), "Expected Query or Form value: " + value);
         return this;
     }
 
@@ -236,12 +235,12 @@ public class RequestCapture {
     }
 
     public void assertCharset(Charset charset) {
-        assertThat(contentType, endsWith(charset.toString()));
+        assertTrue(contentType.endsWith(charset.toString()), "Expected Content Type With Charset: " + charset.toString());
     }
 
     public RequestCapture assertJsonPatch(JsonPatchOperation op, String path, Object value) {
         assertNotNull(jsonPatches, "Asserting JSONPatch but no patch object present");
-        assertThat(jsonPatches.getOperations(), hasItem(new JsonPatchItem(op, path, value)));
+        assertTrue(jsonPatches.getOperations().contains(new JsonPatchItem(op, path, value)));
         return this;
     }
 
@@ -286,7 +285,7 @@ public class RequestCapture {
         assertEquals(1, h.size(), "Expected exactly 1 Content-Type header");
         List<String> parts = Splitter.on(";").trimResults().splitToList(h.get(0));
         assertEquals("multipart/form-data", parts.get(0));
-        assertThat(parts.get(1), startsWith("boundary="));
+        assertTrue(parts.get(1).startsWith("boundary="));
         assertEquals("charset=UTF-8", parts.get(2));
         return this;
     }

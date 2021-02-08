@@ -23,36 +23,20 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package BehaviorTests;
+package kong.unirest;
 
+/**
+ * Static set of Matchers
+ */
+public class Matchers {
 
-import kong.unirest.Client;
-import kong.unirest.HttpRequest;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
-import org.junit.jupiter.api.Test;
-
-import java.util.function.Function;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-class CustomClientTest extends BddTest {
-
-    @Test
-    void settingACustomClient() {
-        Client client = mock(Client.class);;
-
-        HttpResponse mock = mock(HttpResponse.class);
-        when(client.request(any(HttpRequest.class),
-                any(Function.class),
-                any(Class.class))).thenReturn(mock);
-        Unirest.config().httpClient(client);
-
-        assertEquals(mock, Unirest.get("http://localhost/getme").asEmpty());
+    /**
+     * Creates a FieldMatcher expecting a map of keys and values
+     * use like: FieldMatcher.of("fruit", "orange", "quantity" "42")
+     * @param keyValuePairs an array of key-value pairs to expect
+     * @return a new FieldMatcher
+     */
+    public BodyMatcher bodyFields(String keyValuePairs){
+        return FieldMatcher.of(keyValuePairs);
     }
-
-
 }

@@ -23,36 +23,24 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package BehaviorTests;
+package kong.unirest;
 
+import java.util.List;
 
-import kong.unirest.Client;
-import kong.unirest.HttpRequest;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
-import org.junit.jupiter.api.Test;
-
-import java.util.function.Function;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-class CustomClientTest extends BddTest {
-
-    @Test
-    void settingACustomClient() {
-        Client client = mock(Client.class);;
-
-        HttpResponse mock = mock(HttpResponse.class);
-        when(client.request(any(HttpRequest.class),
-                any(Function.class),
-                any(Class.class))).thenReturn(mock);
-        Unirest.config().httpClient(client);
-
-        assertEquals(mock, Unirest.get("http://localhost/getme").asEmpty());
-    }
-
+/**
+ * Body Matchers can be used to evaluate a entity body.
+ * This is represented by one or more (in the case of multi-part) sections
+ * these sections are represented as strings in the same way as toString represents the part
+ * For a single entity like a JSON payload this is simply going to be the JSON String
+ * For field params it will be a key value pair like 'fruit=orange`
+ * For binary types it will be some kind of indication like a file path.
+ */
+public interface BodyMatcher {
+    /**
+     * indicates if the Matcher succeeded in matching the body
+     * @param body the list of body parts
+     * @return MatchStatus indicating if the Matcher succeeded in matching the body
+     */
+    MatchStatus matches(List<String> body);
 
 }

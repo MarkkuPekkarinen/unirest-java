@@ -25,37 +25,19 @@
 
 package kong.unirest;
 
+import java.util.List;
+import java.util.Objects;
 
-import org.junit.jupiter.api.Test;
+public class EqualsBodyMatcher implements BodyMatcher {
+    private final String expected;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-class ContentTypeTest {
-
-    @Test
-    void contentTypeWithEncoding() {
-        verifySame(org.apache.http.entity.ContentType.APPLICATION_ATOM_XML,
-                ContentType.APPLICATION_ATOM_XML);
+    public EqualsBodyMatcher(String body) {
+        this.expected = body;
     }
 
-    @Test
-    void imageTypes() {
-        verifySame(org.apache.http.entity.ContentType.IMAGE_GIF,
-                ContentType.IMAGE_GIF);
+    @Override
+    public MatchStatus matches(List<String> body) throws AssertionError {
+        return new MatchStatus(body.size() == 1 && Objects.equals(expected, body.get(0)), expected);
     }
 
-    @Test
-    void wildCard() {
-        verifySame(org.apache.http.entity.ContentType.WILDCARD,
-                ContentType.WILDCARD);
-    }
-
-    private void verifySame(org.apache.http.entity.ContentType apache, ContentType unirest) {
-        assertEquals(
-                apache.toString(),
-                unirest.toString()
-        );
-        assertEquals(apache.toString(),
-                org.apache.http.entity.ContentType.parse(unirest.toString()).toString());
-    }
 }

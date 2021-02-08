@@ -23,9 +23,10 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package BehaviorTests;
+package kong.unirest.apache;
 
-import com.github.paweladamski.httpclientmock.HttpClientMock;
+import BehaviorTests.BddTest;
+import BehaviorTests.MockServer;
 import com.google.common.collect.Sets;
 import kong.unirest.*;
 import kong.unirest.apache.AsyncIdleConnectionMonitorThread;
@@ -46,9 +47,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -65,46 +63,6 @@ class LifeCycleTest extends BddTest {
     private AsyncIdleConnectionMonitorThread asyncMonitor;
     @Mock
     private PoolingNHttpClientConnectionManager manager;
-
-    @Override @BeforeEach
-    public void setUp() {
-        super.setUp();
-        clearUnirestHooks();
-    }
-
-
-    @Test
-    void ifClientsAreAlreadyRunningCanAddShutdownHooks() throws Exception  {
-        assertShutdownHooks(0);
-
-        Unirest.get(MockServer.GET).asEmpty();
-        Unirest.get(MockServer.GET).asEmptyAsync();
-        Unirest.config().addShutdownHook(true);
-        Unirest.config().addShutdownHook(true);
-
-        assertShutdownHooks(1);
-    }
-
-    @Test
-    void canAddShutdownHooks() throws Exception {
-        assertShutdownHooks(0);
-
-        Unirest.config().addShutdownHook(true).getClient();
-        Unirest.config().addShutdownHook(true).getAsyncClient();
-
-        assertShutdownHooks(1);
-    }
-
-    @Test
-    void settingClientAfterClientHasAlreadyBeenSet() {
-        HttpClientMock httpClientMock = new HttpClientMock();
-        httpClientMock.onGet("http://localhost/getme").doReturn(202, "Howdy Ho!");
-        assertEquals(200, Unirest.get(MockServer.GET).asString().getStatus());
-        Unirest.config().httpClient(httpClientMock);
-        HttpResponse<String> result =  Unirest.get("http://localhost/getme").asString();
-        assertEquals(202, result.getStatus());
-        assertEquals("Howdy Ho!", result.getBody());
-    }
 
     @Test
     void willNotShutdownInactiveAsyncClient() throws IOException {
@@ -153,7 +111,7 @@ class LifeCycleTest extends BddTest {
             Unirest.config().reset().getClient();
             Unirest.config().getAsyncClient();
         });
-        assertThat(ManagementFactory.getThreadMXBean().getThreadCount(), is(lessThanOrEqualTo(startingCount + 10)));
+        assertTrue(ManagementFactory.getThreadMXBean().getThreadCount() <= startingCount + 10);
     }
 
     @Test
@@ -165,32 +123,5 @@ class LifeCycleTest extends BddTest {
             assertEquals("bar", reference.config().getDefaultHeaders().get("foo").get(0));
         }
         assertEquals(0, reference.config().getDefaultHeaders().size());
-    }
-
-    private void assertShutdownHooks(int expected) {
-        Set<Thread> threads = getShutdownHookMap();
-
-        assertEquals(expected, threads.stream().filter(t -> "Unirest Apache Client Shutdown Hook".equals(t.getName())).count());
-        assertEquals(expected, threads.stream().filter(t -> "Unirest Apache Async Client Shutdown Hook".equals(t.getName())).count());
-    }
-
-    private void clearUnirestHooks() {
-        getShutdownHookMap()
-                .stream()
-                .filter(t -> t.getName().contains("Unirest"))
-                .forEach(t -> Runtime.getRuntime().removeShutdownHook(t));
-    }
-
-    private Set<Thread> getShutdownHookMap() {
-        try {
-            // oh this is so dirty and horrible. Set to @Disabled if it starts to be a problem.
-            Class clazz = Class.forName("java.lang.ApplicationShutdownHooks");
-            Field field = clazz.getDeclaredField("hooks");
-            field.setAccessible(true);
-            Set<Thread> threads = ((Map<Thread, Thread>) field.get(null)).keySet();
-            return Sets.newHashSet(threads);
-        }catch (Exception e){
-            throw new RuntimeException(e);
-        }
     }
 }

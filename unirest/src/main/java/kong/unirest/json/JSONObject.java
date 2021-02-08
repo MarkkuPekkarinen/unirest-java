@@ -60,7 +60,16 @@ public class JSONObject extends JSONElement {
      * @param map a map representing the elements of a JSON Object
      */
     public JSONObject(Map<String, Object> map) {
-        this(fromJson(toJson(map), JsonObject.class));
+        this(toTree(map));
+    }
+
+    /**
+     * construct using an object. The Properties of the JSONObject
+     * will be taken from getters and properties of the object
+     * @param object the object to turn into a JSONObject
+     */
+    public JSONObject(Object object) {
+        this(toTree(object));
     }
 
     /**

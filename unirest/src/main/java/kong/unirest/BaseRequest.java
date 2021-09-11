@@ -39,6 +39,7 @@ import static kong.unirest.CallbackFuture.wrap;
 abstract class BaseRequest<R extends HttpRequest> implements HttpRequest<R> {
 
     private Instant creation = Util.now();
+    private int callCount = 0;
     private Optional<ObjectMapper> objectMapper = Optional.empty();
     private String responseEncoding;
     protected Headers headers = new Headers();
@@ -82,18 +83,13 @@ abstract class BaseRequest<R extends HttpRequest> implements HttpRequest<R> {
 
     @Override
     public R basicAuth(String username, String password) {
-        this.headers.replace("Authorization", Util.toBasicAuthValue(username, password));
+        this.headers.setBasicAuth(username, password);
         return (R) this;
     }
 
     @Override
     public R accept(String value) {
-        return header(HeaderNames.ACCEPT, value);
-    }
-
-    @Override
-    public R responseEncoding(String encoding) {
-        this.responseEncoding = encoding;
+        this.headers.accepts(value);
         return (R) this;
     }
 
@@ -111,11 +107,13 @@ abstract class BaseRequest<R extends HttpRequest> implements HttpRequest<R> {
 
     @Override
     public R headers(Map<String, String> headerMap) {
-        if (headerMap != null) {
-            for (Map.Entry<String, String> entry : headerMap.entrySet()) {
-                header(entry.getKey(), entry.getValue());
-            }
-        }
+        this.headers.add(headerMap);
+        return (R) this;
+    }
+
+    @Override
+    public R responseEncoding(String encoding) {
+        this.responseEncoding = encoding;
         return (R) this;
     }
 
@@ -188,7 +186,7 @@ abstract class BaseRequest<R extends HttpRequest> implements HttpRequest<R> {
 
     @Override
     public HttpResponse asEmpty() {
-        return config.getClient().request(this, BasicResponse::new, Empty.class);
+        return request(BasicResponse::new, Empty.class);
     }
 
     @Override
@@ -205,7 +203,7 @@ abstract class BaseRequest<R extends HttpRequest> implements HttpRequest<R> {
 
     @Override
     public HttpResponse<String> asString() throws UnirestException {
-        return config.getClient().request(this, r -> new StringResponse(r, responseEncoding), String.class);
+        return request(r -> new StringResponse(r, responseEncoding), String.class);
     }
 
     @Override
@@ -222,8 +220,7 @@ abstract class BaseRequest<R extends HttpRequest> implements HttpRequest<R> {
 
     @Override
     public HttpResponse<byte[]> asBytes() {
-        return config.getClient()
-                .request(this, ByteResponse::new, byte[].class);
+        return request(ByteResponse::new, byte[].class);
     }
 
     @Override
@@ -238,7 +235,7 @@ abstract class BaseRequest<R extends HttpRequest> implements HttpRequest<R> {
 
     @Override
     public HttpResponse<JsonNode> asJson() throws UnirestException {
-        return config.getClient().request(this, JsonResponse::new, JsonNode.class);
+        return request(JsonResponse::new, JsonNode.class);
     }
 
     @Override
@@ -254,17 +251,17 @@ abstract class BaseRequest<R extends HttpRequest> implements HttpRequest<R> {
 
     @Override
     public <T> HttpResponse<T> asObject(Class<? extends T> responseClass) throws UnirestException {
-        return config.getClient().request(this, r -> new ObjectResponse<T>(getObjectMapper(), r, responseClass), responseClass);
+        return request(r -> new ObjectResponse<T>(getObjectMapper(), r, responseClass), responseClass);
     }
 
     @Override
     public <T> HttpResponse<T> asObject(GenericType<T> genericType) throws UnirestException {
-        return config.getClient().request(this, r -> new ObjectResponse<T>(getObjectMapper(), r, genericType), genericType.getTypeClass());
+        return request(r -> new ObjectResponse<T>(getObjectMapper(), r, genericType), genericType.getTypeClass());
     }
 
     @Override
     public <T> HttpResponse<T> asObject(Function<RawResponse, T> function) {
-        return config.getClient().request(this, funcResponse(function), Object.class);
+        return request(funcResponse(function), Object.class);
     }
 
     @Override
@@ -310,7 +307,7 @@ abstract class BaseRequest<R extends HttpRequest> implements HttpRequest<R> {
 
     @Override
     public void thenConsume(Consumer<RawResponse> consumer) {
-        config.getClient().request(this, getConsumer(consumer), Object.class);
+        request(getConsumer(consumer), Object.class);
     }
 
     @Override
@@ -320,7 +317,7 @@ abstract class BaseRequest<R extends HttpRequest> implements HttpRequest<R> {
 
     @Override
     public HttpResponse<File> asFile(String path, CopyOption... copyOptions) {
-        return config.getClient().request(this, r -> new FileResponse(r, path, downloadMonitor, copyOptions), File.class);
+        return request(r -> new FileResponse(r, path, downloadMonitor, copyOptions), File.class);
     }
 
     @Override
@@ -352,6 +349,19 @@ abstract class BaseRequest<R extends HttpRequest> implements HttpRequest<R> {
         return all;
     }
 
+    private <E> HttpResponse<E> request(Function<RawResponse, HttpResponse<E>> transformer, Class<?> resultType){
+        HttpResponse<E> response = config.getClient().request(this, transformer, resultType);
+        callCount++;
+        if(config.isAutomaticRetryAfter() && RetryAfter.isRetriable(response) && callCount < config.maxRetries()){
+            RetryAfter retryAfter = RetryAfter.from(response);
+            if(retryAfter.canWait()) {
+                retryAfter.waitForIt();
+                return request(transformer, resultType);
+            }
+        }
+        return response;
+    }
+
 
     private Function<RawResponse, HttpResponse<Object>> getConsumer(Consumer<RawResponse> consumer) {
         return r -> {
@@ -367,12 +377,10 @@ abstract class BaseRequest<R extends HttpRequest> implements HttpRequest<R> {
 
     @Override
     public String getUrl() {
-        return escape(url.toString());
+        return url.toString();
     }
 
-    private String escape(String string) {
-        return string.replaceAll(" ", "%20").replaceAll("\t", "%09");
-    }
+
 
     @Override
     public Headers getHeaders() {

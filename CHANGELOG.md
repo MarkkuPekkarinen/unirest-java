@@ -1,3 +1,8 @@
+## 3.13.0
+* Support InputStreams as bodies.
+* Support ProgressMonitors for InputStream bodies
+* Unirest-Mocks now includes a MockResponse<T> and a MockConfig for use independent of the MockClient
+
 ## 3.12.0
 * Bump GSON to 2.8.8
 * Support honoring Retry-After headers on 429/529 for regular (not async) requests.

@@ -32,9 +32,12 @@ import kong.unirest.Unirest;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.util.Base64;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static kong.unirest.TestUtil.assertBasicAuth;
-import static kong.unirest.TestUtil.mapOf;
+import static BehaviorTests.TestUtils.mapOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class HeaderTest extends BddTest {
 
@@ -263,7 +266,9 @@ class HeaderTest extends BddTest {
                 .getBody();
 
         String header = bin.getObject().getJSONObject("headers").getString("Authorization");
-        assertBasicAuth(header, "user2", "pass2");
+        assertNotNull(header, "Authorization Header Missing");
+        String credentials = header.replace("Basic ","");
+        assertEquals("user2" + ":" + "pass2", new String(Base64.getDecoder().decode(credentials)));
     }
 
     @Test //https://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2
@@ -341,5 +346,17 @@ class HeaderTest extends BddTest {
                 .asObject(RequestCapture.class)
                 .getBody()
                 .assertHeader("foo","bar");
+    }
+
+    @Test
+    void replaceHeadersTests() {
+        Unirest.config().addDefaultHeader("foo", "default");
+        Unirest.get(MockServer.GET)
+                .header("foo","bar")
+                .headersReplace(mapOf("foo", "replace", "two", "bar"))
+                .asObject(RequestCapture.class)
+                .getBody()
+                .assertHeader("foo","replace")
+                .assertHeader("two","bar");
     }
 }

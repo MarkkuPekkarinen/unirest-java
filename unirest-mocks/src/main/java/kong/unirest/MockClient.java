@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 public class MockClient implements Client, AsyncClient {
     private final Supplier<Config> config;
     private List<Routes> routes = new ArrayList<>();
+    private Invocation defaultResponse;
 
     public MockClient(Supplier<Config> config){
         this.config = config;
@@ -105,7 +106,7 @@ public class MockClient implements Client, AsyncClient {
     }
 
     private Routes createNewPath(HttpRequest request) {
-        Routes p = new Routes(request);
+        Routes p = new Routes(request, defaultResponse);
         routes.add(p);
         return p;
     }
@@ -176,5 +177,21 @@ public class MockClient implements Client, AsyncClient {
      */
     public void verifyAll() {
         routes.forEach(Routes::verifyAll);
+    }
+
+    /**
+     * Reset all expectations
+     */
+    public void reset() {
+        routes.clear();
+        defaultResponse = null;
+    }
+
+    /**
+     * return this status for any request that doesn't match a expectation
+     */
+    public ExpectedResponse defaultResponse() {
+        this.defaultResponse = new Invocation();
+        return this.defaultResponse;
     }
 }

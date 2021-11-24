@@ -34,8 +34,9 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static com.google.common.collect.Sets.newHashSet;
-import static kong.unirest.TestUtil.rezFile;
+import static BehaviorTests.TestUtils.rezFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class InterceptorTest extends BddTest {
 
@@ -82,9 +83,8 @@ class InterceptorTest extends BddTest {
     void totalFailure() throws Exception {
         Unirest.config().httpClient(TestUtil.getFailureClient()).interceptor(interceptor);
 
-        TestUtil.assertException(() -> Unirest.get(MockServer.GET).asEmpty(),
-                UnirestException.class,
-                "java.io.IOException: " + "Something horrible happened");
+        UnirestException ex = assertThrows(UnirestException.class, () -> Unirest.get(MockServer.GET).asEmpty());
+        assertEquals("java.io.IOException: " + "Something horrible happened", ex.getMessage());
     }
 
     @Test

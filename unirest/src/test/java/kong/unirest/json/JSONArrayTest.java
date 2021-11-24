@@ -26,9 +26,9 @@
 package kong.unirest.json;
 
 import BehaviorTests.Foo;
-import kong.unirest.TestUtil;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 import java.io.StringWriter;
 import java.math.BigDecimal;
@@ -39,7 +39,6 @@ import java.util.List;
 
 import static com.google.common.collect.ImmutableMap.of;
 import static java.util.Arrays.asList;
-import static kong.unirest.TestUtil.assertException;
 import static kong.unirest.json.JSONObjectTest.assertEqualJson;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -66,9 +65,8 @@ class JSONArrayTest {
         JSONArray names = new JSONArray();
         names.put((String)null);
 
-        assertException(() -> values.toJSONObject(names),
-                JSONException.class,
-                "JSONArray[0] not a string.");
+        JSONException ex = assertThrows(JSONException.class, () -> values.toJSONObject(names));
+        assertEquals("JSONArray[0] not a string.", ex.getMessage());
     }
 
     @Test
@@ -195,8 +193,10 @@ class JSONArrayTest {
         JSONArray obj = new JSONArray();
         assertSame(obj, obj.put(true));
         obj.put("nan");
+        obj.put((Object)false);
 
         assertTrue(obj.getBoolean(0));
+        assertFalse(obj.getBoolean(2));
         assertNotFound(() -> obj.getBoolean(5));
         assertNotType(() -> obj.getBoolean(1), "JSONArray[1] is not a boolean.");
 
@@ -281,8 +281,11 @@ class JSONArrayTest {
         JSONArray obj = new JSONArray();
         assertSame(obj, obj.put(subObj));
         obj.put(45);
+        JSONArray other = new JSONArray("[false]");
+        obj.put((Object) other);
 
         assertEqualJson(subObj, obj.getJSONArray(0));
+        assertEqualJson(other, obj.get(2));
         assertNotFound(() -> obj.getJSONArray(5));
         assertNotType(() -> obj.getJSONArray(1), "JSONArray[1] is not a JSONArray.");
         assertEqualJson(subObj, obj.optJSONArray(0));
@@ -495,9 +498,8 @@ class JSONArrayTest {
 
     @Test
     void constructArrayError() {
-        assertException(()-> new JSONArray(new Object()),
-                JSONException.class,
-                "JSONArray initial value should be a string or collection or array.");
+        JSONException ex = assertThrows(JSONException.class, ()-> new JSONArray(new Object()));
+        assertEquals("JSONArray initial value should be a string or collection or array.", ex.getMessage());
     }
 
     @Test
@@ -530,11 +532,23 @@ class JSONArrayTest {
         }
     }
 
-    public static void assertNotType(TestUtil.ExRunnable exRunnable, String message) {
-        assertException(exRunnable, JSONException.class, message);
+    @Test
+    void equalsTests() {
+        JSONArray a1 = new JSONArray();
+        JSONArray a2 = new JSONArray();
+        JSONArray a3 = new JSONArray("[false]");
+        assertTrue(a1.equals(a1));
+        assertTrue(a1.equals(a2));
+        assertFalse(a1.equals("moop"));
+        assertFalse(a1.equals(a3));
     }
 
-    private void assertNotFound(TestUtil.ExRunnable exRunnable) {
+    public static void assertNotType(Executable exRunnable, String message) {
+        JSONException ex = assertThrows(JSONException.class, exRunnable);
+        assertEquals(message, ex.getMessage());
+    }
+
+    private void assertNotFound(Executable exRunnable) {
         assertNotType(exRunnable, "JSONArray[5] not found.");
     }
 

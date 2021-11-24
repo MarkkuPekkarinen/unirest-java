@@ -33,11 +33,15 @@ class Routes implements Assert {
     private final List<Invocation> invokes = new ArrayList<>();
 
 
-    Routes(HttpRequest request) {
+    Routes(HttpRequest request, Invocation expected) {
         Path p = new Path(request.getUrl());
         this.method = request.getHttpMethod();
         this.path = p.baseUrl();
-        invokes.add(new Invocation(this, request));
+        if(expected != null){
+            invokes.add(new Invocation(this, expected));
+        } else {
+            invokes.add(new Invocation(this, request));
+        }
     }
 
     public Routes(HttpMethod method, Path p) {

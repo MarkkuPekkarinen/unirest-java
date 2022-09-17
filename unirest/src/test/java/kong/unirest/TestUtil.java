@@ -79,13 +79,7 @@ public class TestUtil {
         Util.resetClock();
     }
 
-    public static KeyStore readStore() throws Exception {
-        try (InputStream keyStoreStream = TestUtil.class.getResourceAsStream("/certs/badssl.com-client.p12")) {
-            KeyStore keyStore = KeyStore.getInstance("PKCS12");
-            keyStore.load(keyStoreStream, "badssl.com".toCharArray());
-            return keyStore;
-        }
-    }
+
 
     public static Client getFailureClient() throws IOException {
         HttpClient client = mock(HttpClient.class);

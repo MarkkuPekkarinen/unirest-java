@@ -25,18 +25,14 @@
 
 package kong.tests;
 
-import kong.unirest.Assert;
-import kong.unirest.HttpMethod;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
+import kong.unirest.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.function.Supplier;
 
 import static kong.unirest.HttpMethod.GET;
 import static kong.unirest.HttpMethod.POST;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class AssertTest extends Base {
 
@@ -46,13 +42,13 @@ class AssertTest extends Base {
         Unirest.get(path).asEmpty();
 
         Assert exp = client.assertThat(HttpMethod.GET, path);
-        exp.assertInvokedTimes(2);
+        exp.wasInvokedTimes(2);
 
-        assertException(() -> exp.assertInvokedTimes(1),
+        assertException(() -> exp.wasInvokedTimes(1),
                 "Incorrect number of invocations. Expected 1 got 2\n" +
                         "GET http://basic");
 
-        assertException(() -> exp.assertInvokedTimes(3),
+        assertException(() -> exp.wasInvokedTimes(3),
                 "Incorrect number of invocations. Expected 3 got 2\n" +
                         "GET http://basic");
     }
@@ -82,9 +78,9 @@ class AssertTest extends Base {
         Unirest.get(path).header("monster", "grover").asEmpty();
 
         Assert expect = client.assertThat(GET, path);
-        expect.assertHeader("monster", "grover");
+        expect.hadHeader("monster", "grover");
 
-        assertException(() -> expect.assertHeader("monster", "oscar"),
+        assertException(() -> expect.hadHeader("monster", "oscar"),
                 "No invocation found with header [monster: oscar]\nFound:\nmonster: grover");
     }
 
@@ -136,7 +132,7 @@ class AssertTest extends Base {
     }
 
     @Test
-    void assertBody() {
+    void expectBodyFailure() {
         client.expect(POST, path)
                 .body("foo")
                 .thenReturn("bar");
@@ -147,6 +143,43 @@ class AssertTest extends Base {
                 "A expectation was never invoked! POST http://basic\n" +
                         "Body:\n" +
                         "\tfoo");
+    }
+
+    @Test
+    void assertBody() {
+        client.expect(POST, path);
+
+        Unirest.post(path).body("hey buddy").asString();
+
+        client.assertThat(POST, path).hadBody("hey buddy");
+    }
+
+    @Test
+    void assertBody_fail() {
+        client.expect(POST, path);
+
+        Unirest.post(path).body("hey buddy").asString();
+
+        assertThrows(UnirestAssertion.class,
+                () -> client.assertThat(POST, path).hadBody("I'm a big ol beat"));
+    }
+
+    @Test
+    void assertBody_multipart() {
+        client.expect(POST, path);
+
+        Unirest.post(path).field("hey", "buddy").asString();
+
+        client.assertThat(POST, path).hadField("hey", "buddy");
+    }
+
+    @Test
+    void assertBody_multipart_fails() {
+        client.expect(POST, path);
+
+        Unirest.post(path).field("hey", "buddy").asString();
+        assertThrows(UnirestAssertion.class, () -> client.assertThat(POST, path).hadField("nope", "buddy"));
+        assertThrows(UnirestAssertion.class, () -> client.assertThat(POST, path).hadField("hey", "nope"));
     }
 
     @Test

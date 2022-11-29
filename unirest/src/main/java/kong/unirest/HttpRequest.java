@@ -195,6 +195,13 @@ public interface HttpRequest<R extends HttpRequest>  {
     R proxy(String host, int port);
 
     /**
+     * Set a proxy for this request. Only basic proxies are supported.
+     * @param proxy proxy
+     * @return this request builder
+     */
+    R proxy(Proxy proxy);
+
+    /**
      * sets a download monitor for monitoring the response. this could be used for drawing a progress bar
      * @param monitor a ProgressMonitor
      * @return this request builder
@@ -369,7 +376,7 @@ public interface HttpRequest<R extends HttpRequest>  {
      * Executes the request and returns the response without parsing the body
      * @return the basic HttpResponse
      */
-    HttpResponse asEmpty();
+    HttpResponse<Empty> asEmpty();
 
     /**
      * Executes the request asynchronously and returns the response without parsing the body

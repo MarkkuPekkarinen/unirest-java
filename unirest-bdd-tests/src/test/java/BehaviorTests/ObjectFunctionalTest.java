@@ -26,10 +26,9 @@
 package BehaviorTests;
 
 import com.google.gson.Gson;
-import kong.unirest.HttpResponse;
-import org.junit.jupiter.api.Assertions;
+import kong.unirest.core.HttpResponse;
 import org.junit.jupiter.api.Test;
-import kong.unirest.Unirest;
+import kong.unirest.core.Unirest;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -76,10 +75,10 @@ class ObjectFunctionalTest extends BddTest {
                     throw ohNoes;
                 });
 
-        Assertions.assertEquals(200, r.getStatus());
-        Assertions.assertTrue(r.getParsingError().isPresent());
-        Assertions.assertEquals(ohNoes, r.getParsingError().get().getCause());
-        Assertions.assertEquals("call me ishmael", r.getParsingError().get().getOriginalBody());
+        assertEquals(200, r.getStatus());
+        assertTrue(r.getParsingError().isPresent());
+        assertEquals(ohNoes, r.getParsingError().get().getCause());
+        assertEquals("call me ishmael", r.getParsingError().get().getOriginalBody());
     }
 
     @Test
@@ -93,9 +92,9 @@ class ObjectFunctionalTest extends BddTest {
                     throw ohNoes;
                 }).get();
 
-        Assertions.assertEquals(200, r.getStatus());
-        Assertions.assertTrue(r.getParsingError().isPresent());
-        Assertions.assertEquals(ohNoes, r.getParsingError().get().getCause());
-        Assertions.assertEquals("call me ishmael", r.getParsingError().get().getOriginalBody());
+        assertEquals(200, r.getStatus());
+        assertTrue(r.getParsingError().isPresent());
+        assertEquals(ohNoes, r.getParsingError().get().getCause());
+        assertEquals("call me ishmael", r.getParsingError().get().getOriginalBody());
     }
 }

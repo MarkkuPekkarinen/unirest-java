@@ -26,16 +26,16 @@
 package BehaviorTests;
 
 import com.google.common.collect.Lists;
-import org.junit.jupiter.api.Assertions;
+import kong.unirest.core.Headers;
+import kong.unirest.core.Unirest;
 import org.junit.jupiter.api.Test;
-import kong.unirest.Header;
-import kong.unirest.Headers;
-import kong.unirest.Unirest;
+
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ResponseHeaderTest extends BddTest {
-
 
     @Test
     void readingResponseHeaders() {
@@ -46,11 +46,24 @@ class ResponseHeaderTest extends BddTest {
 
         Headers h = Unirest.get(MockServer.GET).asString().getHeaders();
 
-       // assertHeader("Date", "Fri, 04 Jan 2019 01:46:34 GMT", h.all().get(0));
-        Assertions.assertEquals("text/plain;charset=utf-8", h.getFirst("Content-Type"));
-        Assertions.assertEquals("JSESSIONID=ABC123; Path=/", h.getFirst("Set-Cookie"));
-        Assertions.assertEquals("Thu, 01 Jan 1970 00:00:00 GMT", h.getFirst("Expires"));
-        Assertions.assertEquals(Lists.newArrayList("oranges", "grapes"), h.get("zed"));
-        Assertions.assertEquals("apples", h.getFirst("alpha"));
+        // assertHeader("Date", "Fri, 04 Jan 2019 01:46:34 GMT", h.all().get(0));
+        assertEquals("text/plain;charset=utf-8", h.getFirst("Content-Type"));
+        assertEquals("JSESSIONID=ABC123; Path=/", h.getFirst("Set-Cookie"));
+        assertEquals("Thu, 01 Jan 1970 00:00:00 GMT", h.getFirst("Expires"));
+        assertEquals(Lists.newArrayList("oranges", "grapes"), h.get("zed"));
+        assertEquals("apples", h.getFirst("alpha"));
+    }
+
+    @Test
+    void multipleHeaders() {
+        MockServer.addResponseHeader("fruit", "oranges");
+        MockServer.addResponseHeader("fruit", "apples");
+        MockServer.addResponseHeader("fruit", "grapes");
+
+        Headers h = Unirest.get(MockServer.GET).asString().getHeaders();
+
+        List<String> headers = h.get("fruit");
+        assertEquals(3, headers.size());
+        assertEquals(Arrays.asList("oranges","apples","grapes"), headers);
     }
 }

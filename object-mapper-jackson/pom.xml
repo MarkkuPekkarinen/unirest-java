@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.konghq</groupId>
         <artifactId>unirest-java-parent</artifactId>
-        <version>3.14.5-SNAPSHOT</version>
+        <version>4.0.4-SNAPSHOT</version>
     </parent>
 
     <artifactId>unirest-objectmapper-jackson</artifactId>
@@ -19,13 +19,18 @@
     <dependencies>
         <dependency>
             <groupId>com.konghq</groupId>
-            <artifactId>unirest-java</artifactId>
+            <artifactId>unirest-java-core</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
             <version>${jackson.version}</version>
         </dependency>
     </dependencies>

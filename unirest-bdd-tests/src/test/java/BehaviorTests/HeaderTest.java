@@ -25,18 +25,17 @@
 
 package BehaviorTests;
 
-import kong.unirest.GetRequest;
-import kong.unirest.HttpResponse;
-import kong.unirest.JsonNode;
-import kong.unirest.Unirest;
-import org.junit.jupiter.api.Assertions;
+import kong.unirest.core.GetRequest;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.JsonNode;
+import kong.unirest.core.Unirest;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static BehaviorTests.TestUtils.mapOf;
+import static BehaviorTests.TestUtil.mapOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class HeaderTest extends BddTest {
@@ -111,22 +110,22 @@ class HeaderTest extends BddTest {
         GetRequest request = Unirest.get(MockServer.GET)
                 .header("Name", "Marco");
 
-        Assertions.assertEquals(1, request.getHeaders().size());
-        Assertions.assertEquals("Marco", request.getHeaders().get("name").get(0));
-        Assertions.assertEquals("Marco", request.getHeaders().get("NAme").get(0));
-        Assertions.assertEquals("Marco", request.getHeaders().get("Name").get(0));
+        assertEquals(1, request.getHeaders().size());
+        assertEquals("Marco", request.getHeaders().get("name").get(0));
+        assertEquals("Marco", request.getHeaders().get("NAme").get(0));
+        assertEquals("Marco", request.getHeaders().get("Name").get(0));
 
         parse(request.asJson())
                 .assertHeader("Name", "Marco");
 
         request = Unirest.get(MockServer.GET).header("Name", "Marco").header("Name", "John");
-        Assertions.assertEquals(1, request.getHeaders().size());
-        Assertions.assertEquals("Marco", request.getHeaders().get("name").get(0));
-        Assertions.assertEquals("John", request.getHeaders().get("name").get(1));
-        Assertions.assertEquals("Marco", request.getHeaders().get("NAme").get(0));
-        Assertions.assertEquals("John", request.getHeaders().get("NAme").get(1));
-        Assertions.assertEquals("Marco", request.getHeaders().get("Name").get(0));
-        Assertions.assertEquals("John", request.getHeaders().get("Name").get(1));
+        assertEquals(1, request.getHeaders().size());
+        assertEquals("Marco", request.getHeaders().get("name").get(0));
+        assertEquals("John", request.getHeaders().get("name").get(1));
+        assertEquals("Marco", request.getHeaders().get("NAme").get(0));
+        assertEquals("John", request.getHeaders().get("NAme").get(1));
+        assertEquals("Marco", request.getHeaders().get("Name").get(0));
+        assertEquals("John", request.getHeaders().get("Name").get(1));
     }
 
     @Test

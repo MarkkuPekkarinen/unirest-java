@@ -26,13 +26,14 @@
 package BehaviorTests;
 
 import com.google.common.collect.ImmutableMap;
-import kong.unirest.JsonPatchOperation;
-import kong.unirest.TestUtil;
-import kong.unirest.Unirest;
-import kong.unirest.json.JSONArray;
-import kong.unirest.json.JSONObject;
+import kong.unirest.core.Unirest;
+import kong.unirest.core.json.JSONArray;
+import kong.unirest.core.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
+
+
+import static kong.unirest.core.JsonPatchOperation.*;
 
 class JsonPatchTest extends BddTest {
 
@@ -45,9 +46,9 @@ class JsonPatchTest extends BddTest {
                 .asObject(RequestCapture.class)
                 .getBody()
                 .assertContentType("application/json-patch+json")
-                .assertJsonPatch(JsonPatchOperation.add, "/some/path", "a value")
-                .assertJsonPatch(JsonPatchOperation.add, "/another/path", 42)
-                .assertJsonPatch(JsonPatchOperation.add, "/third/path", true);
+                .assertJsonPatch(add, "/some/path", "a value")
+                .assertJsonPatch(add, "/another/path", 42)
+                .assertJsonPatch(add, "/third/path", true);
     }
 
     @Test
@@ -59,9 +60,9 @@ class JsonPatchTest extends BddTest {
                 .asObject(RequestCapture.class)
                 .getBody()
                 .assertContentType("application/json-patch+json")
-                .assertJsonPatch(JsonPatchOperation.remove, "/some/path", null)
-                .assertJsonPatch(JsonPatchOperation.remove, "/another/path", null)
-                .assertJsonPatch(JsonPatchOperation.remove, "/third/path", null);
+                .assertJsonPatch(remove, "/some/path", null)
+                .assertJsonPatch(remove, "/another/path", null)
+                .assertJsonPatch(remove, "/third/path", null);
     }
 
     @Test
@@ -73,9 +74,9 @@ class JsonPatchTest extends BddTest {
                 .asObject(RequestCapture.class)
                 .getBody()
                 .assertContentType("application/json-patch+json")
-                .assertJsonPatch(JsonPatchOperation.replace, "/some/path", "a value")
-                .assertJsonPatch(JsonPatchOperation.replace, "/another/path", 42)
-                .assertJsonPatch(JsonPatchOperation.replace, "/third/path", true);
+                .assertJsonPatch(replace, "/some/path", "a value")
+                .assertJsonPatch(replace, "/another/path", 42)
+                .assertJsonPatch(replace, "/third/path", true);
     }
 
     @Test
@@ -87,9 +88,9 @@ class JsonPatchTest extends BddTest {
                 .asObject(RequestCapture.class)
                 .getBody()
                 .assertContentType("application/json-patch+json")
-                .assertJsonPatch(JsonPatchOperation.test, "/some/path", "a value")
-                .assertJsonPatch(JsonPatchOperation.test, "/another/path", 42)
-                .assertJsonPatch(JsonPatchOperation.test, "/third/path", true);
+                .assertJsonPatch(test, "/some/path", "a value")
+                .assertJsonPatch(test, "/another/path", 42)
+                .assertJsonPatch(test, "/third/path", true);
     }
 
     @Test
@@ -98,7 +99,7 @@ class JsonPatchTest extends BddTest {
                 .add("/some/path", new JSONObject().put("id", "foo"))
                 .asObject(RequestCapture.class)
                 .getBody()
-                .assertJsonPatch(JsonPatchOperation.add, "/some/path", new JSONObject().put("id", "foo"));
+                .assertJsonPatch(add, "/some/path", new JSONObject().put("id", "foo"));
     }
 
     @Test
@@ -112,10 +113,10 @@ class JsonPatchTest extends BddTest {
                 .add("/jsonArrays", new JSONArray().put(basicJson))
                 .asObject(RequestCapture.class)
                 .getBody()
-                .assertJsonPatch(JsonPatchOperation.add, "/stringArrays", new String[]{"foo, bar"})
-                .assertJsonPatch(JsonPatchOperation.add, "/maps", basicJson)
-                .assertJsonPatch(JsonPatchOperation.add, "/jsonObjects", basicJson)
-                .assertJsonPatch(JsonPatchOperation.add, "/jsonArrays", new JSONArray().put(basicJson))
+                .assertJsonPatch(add, "/stringArrays", new String[]{"foo, bar"})
+                .assertJsonPatch(add, "/maps", basicJson)
+                .assertJsonPatch(add, "/jsonObjects", basicJson)
+                .assertJsonPatch(add, "/jsonArrays", new JSONArray().put(basicJson))
         ;
     }
 
@@ -125,7 +126,7 @@ class JsonPatchTest extends BddTest {
                 .move("/old/location", "/new/location")
                 .asObject(RequestCapture.class)
                 .getBody()
-                .assertJsonPatch(JsonPatchOperation.move, "/new/location", "/old/location");
+                .assertJsonPatch(move, "/new/location", "/old/location");
     }
 
     @Test
@@ -134,7 +135,7 @@ class JsonPatchTest extends BddTest {
                 .copy("/old/location", "/new/location")
                 .asObject(RequestCapture.class)
                 .getBody()
-                .assertJsonPatch(JsonPatchOperation.copy, "/new/location", "/old/location");
+                .assertJsonPatch(copy, "/new/location", "/old/location");
     }
 
     @Test

@@ -27,8 +27,8 @@ package BehaviorTests;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.google.gson.Gson;
-import kong.unirest.*;
-import org.junit.jupiter.api.Assertions;
+import kong.unirest.core.*;
+import kong.unirest.gson.GsonObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -41,13 +41,13 @@ class AsObjectTest extends BddTest {
 
     @Test
     void basicJsonObjectMapperIsTheDefault() {
-        Unirest.config().shutDown(true);
-        assertTrue(Unirest.config().getObjectMapper() instanceof  JsonObjectMapper);
+        Unirest.config().reset(true);
+        assertTrue(Unirest.config().getObjectMapper() instanceof GsonObjectMapper);
     }
 
     @Test
     void basicJsonObjectMapperIsGoodEnough() {
-        Unirest.config().shutDown(true);
+        Unirest.config().reset(true);
         MockServer.setJsonAsResponse(new Foo("bar"));
 
         Foo f = Unirest.get(MockServer.GET)
@@ -61,8 +61,8 @@ class AsObjectTest extends BddTest {
     void whenNoBodyIsReturned() {
         HttpResponse<RequestCapture> i = Unirest.get(MockServer.NOBODY).asObject(RequestCapture.class);
 
-        Assertions.assertEquals(200, i.getStatus());
-        Assertions.assertEquals(null, i.getBody());
+        assertEquals(200, i.getStatus());
+        assertEquals(null, i.getBody());
     }
 
     @Test
@@ -156,10 +156,10 @@ class AsObjectTest extends BddTest {
                 .asObject(RequestCapture.class);
 
         assertNull(request.getBody());
-        Assertions.assertTrue(request.getParsingError().isPresent());
-        Assertions.assertEquals("kong.unirest.UnirestException: com.fasterxml.jackson.core.JsonParseException: Unrecognized token 'You': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')\n" +
+        assertTrue(request.getParsingError().isPresent());
+        assertEquals("kong.unirest.core.UnirestException: com.fasterxml.jackson.core.JsonParseException: Unrecognized token 'You': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')\n" +
                 " at [Source: (String)\"You did something bad\"; line: 1, column: 4]", request.getParsingError().get().getMessage());
-        Assertions.assertEquals("You did something bad", request.getParsingError().get().getOriginalBody());
+        assertEquals("You did something bad", request.getParsingError().get().getOriginalBody());
 
     }
 
@@ -169,10 +169,10 @@ class AsObjectTest extends BddTest {
                 .asObject(new GenericType<RequestCapture>() {});
 
         assertNull(request.getBody());
-        Assertions.assertTrue(request.getParsingError().isPresent());
-        Assertions.assertEquals("kong.unirest.UnirestException: com.fasterxml.jackson.core.JsonParseException: Unrecognized token 'You': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')\n" +
+        assertTrue(request.getParsingError().isPresent());
+        assertEquals("kong.unirest.core.UnirestException: com.fasterxml.jackson.core.JsonParseException: Unrecognized token 'You': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')\n" +
                 " at [Source: (String)\"You did something bad\"; line: 1, column: 4]", request.getParsingError().get().getMessage());
-        Assertions.assertEquals("You did something bad", request.getParsingError().get().getOriginalBody());
+        assertEquals("You did something bad", request.getParsingError().get().getOriginalBody());
     }
 
     @Test
@@ -181,10 +181,10 @@ class AsObjectTest extends BddTest {
                 .asObject(new GenericType<RequestCapture>() {});
 
         assertNull(request.getBody());
-        Assertions.assertTrue(request.getParsingError().isPresent());
-        Assertions.assertEquals("kong.unirest.UnirestException: com.fasterxml.jackson.core.JsonParseException: Unrecognized token 'You': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')\n" +
+        assertTrue(request.getParsingError().isPresent());
+        assertEquals("kong.unirest.core.UnirestException: com.fasterxml.jackson.core.JsonParseException: Unrecognized token 'You': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')\n" +
                 " at [Source: (String)\"You did something bad\"; line: 1, column: 4]", request.getParsingError().get().getMessage());
-        Assertions.assertEquals("You did something bad", request.getParsingError().get().getOriginalBody());
+        assertEquals("You did something bad", request.getParsingError().get().getOriginalBody());
     }
 
     @Test
@@ -192,7 +192,7 @@ class AsObjectTest extends BddTest {
         com.fasterxml.jackson.databind.ObjectMapper jack = new com.fasterxml.jackson.databind.ObjectMapper();
         jack.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
 
-        Unirest.config().setObjectMapper(new TestObjectMapper(jack));
+        Unirest.config().setObjectMapper(new JacksonObjectMapper(jack));
 
         MockServer.setStringResponse("{\"foo\": [1,2,3] }");
 
@@ -214,7 +214,7 @@ class AsObjectTest extends BddTest {
         @Override
         public <T> T readValue(String value, Class<T> valueType) {
             this.readWasCalled = true;
-            return new TestObjectMapper().readValue(value, valueType);
+            return new JacksonObjectMapper().readValue(value, valueType);
         }
 
         @Override

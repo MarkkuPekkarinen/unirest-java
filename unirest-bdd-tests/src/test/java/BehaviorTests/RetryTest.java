@@ -25,8 +25,7 @@
 
 package BehaviorTests;
 
-import kong.unirest.*;
-import org.junit.jupiter.api.Assertions;
+import kong.unirest.core.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -47,9 +46,9 @@ public class RetryTest extends BddTest {
     @Test
     void whenSettingIsOff() {
         MockServer.retryTimes(100, 429, 1d);
-        Assertions.assertEquals(429, Unirest.get(MockServer.GET).asEmpty().getStatus());
-        Assertions.assertEquals(429, Unirest.get(MockServer.GET).asString().getStatus());
-        Assertions.assertEquals(429, Unirest.get(MockServer.GET).asBytes().getStatus());
+        assertEquals(429, Unirest.get(MockServer.GET).asEmpty().getStatus());
+        assertEquals(429, Unirest.get(MockServer.GET).asString().getStatus());
+        assertEquals(429, Unirest.get(MockServer.GET).asBytes().getStatus());
         assertEquals(429, Unirest.get(MockServer.GET).asObject(RequestCapture.class).getStatus());
     }
 
@@ -106,7 +105,7 @@ public class RetryTest extends BddTest {
     void willRetryAfterSeconds_AsJson() {
         MockServer.setStringResponse("{\"message\": \"Hi Mom\"}");
         JsonNode cap = this.<JsonNode>doWithRetry(r -> r.asJson());
-        Assertions.assertEquals("Hi Mom", cap.getObject().getString("message"));
+        assertEquals("Hi Mom", cap.getObject().getString("message"));
     }
 
     @Test
@@ -139,7 +138,7 @@ public class RetryTest extends BddTest {
         Unirest.config().retryAfter(true, 3);
 
         HttpResponse resp = Unirest.get(MockServer.GET).asEmpty();
-        Assertions.assertEquals(429, resp.getStatus());
+        assertEquals(429, resp.getStatus());
         MockServer.assertRequestCount(3);
     }
 
@@ -151,7 +150,7 @@ public class RetryTest extends BddTest {
 
     private void assertDidNotRetry() {
         Unirest.config().retryAfter(true);
-        Assertions.assertEquals(429, Unirest.get(MockServer.GET).asEmpty().getStatus());
+        assertEquals(429, Unirest.get(MockServer.GET).asEmpty().getStatus());
         MockServer.assertRequestCount(1);
     }
 
@@ -163,7 +162,7 @@ public class RetryTest extends BddTest {
         HttpRequest request = Unirest.get(MockServer.GET);
 
         HttpResponse<R> response = bodyExtractor.apply(request);
-        Assertions.assertEquals(200, response.getStatus());
+        assertEquals(200, response.getStatus());
         MockServer.assertRequestCount(2);
 
         return response.getBody();

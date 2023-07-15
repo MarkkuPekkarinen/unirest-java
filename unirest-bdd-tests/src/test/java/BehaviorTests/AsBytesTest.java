@@ -25,13 +25,13 @@
 
 package BehaviorTests;
 
-import kong.unirest.Unirest;
+import kong.unirest.core.Unirest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AsBytesTest extends BddTest {
-    TestObjectMapper om = new TestObjectMapper();
+    JacksonObjectMapper om = new JacksonObjectMapper();
 
     @Test
     void getGetResultAsBytes() {
@@ -42,6 +42,15 @@ class AsBytesTest extends BddTest {
         RequestCapture cap = om.readValue(content, RequestCapture.class);
 
         cap.assertStatus(200);
+    }
+
+    @Test
+    void getGetBinaryResultAsBytes() {
+        byte[] content = Unirest.get(MockServer.BINARYFILE)
+                .asBytes()
+                .getBody();
+
+        assertEquals(46246, content.length);
     }
 
     @Test

@@ -25,13 +25,12 @@
 
 package kong.tests;
 
-import kong.unirest.*;
-import kong.unirest.json.JSONObject;
+import kong.unirest.core.*;
+import kong.unirest.core.json.JSONObject;
 import org.junit.jupiter.api.Test;
 
-import static com.google.common.collect.ImmutableMap.of;
-import static kong.unirest.HttpMethod.GET;
-import static kong.unirest.HttpStatus.BAD_REQUEST;
+import static kong.unirest.core.HttpMethod.GET;
+import static kong.unirest.core.HttpStatus.BAD_REQUEST;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ExpectedResponseTest extends Base {
@@ -41,7 +40,7 @@ class ExpectedResponseTest extends Base {
         client.expect(GET, "http://localhost/get/cheese/passed")
                 .queryString("params", "cheese")
                 .thenReturn();
-        
+
         HttpRequestSummary sum = Unirest.get("http://localhost/get/{params}/passed")
                 .routeParam("params", "cheese")
                 .queryString("fruit", "apples")
@@ -166,52 +165,7 @@ class ExpectedResponseTest extends Base {
         assertEquals("grover", rez.getHeaders().getFirst("monster"));
     }
 
-    @Test
-    void shouldSerializeMockResponse() {
-        MockClient mock = MockClient.register();
-
-        mock.expect(HttpMethod.GET, "http://zombo.com")
-                .thenReturn(MockResponse.bad("Bad Request"));
-
-        HttpResponse<String> httpResponse = Unirest.get("http://zombo.com").asString();
-
-        assertEquals(400, httpResponse.getStatus());
-        assertEquals("Bad Request", httpResponse.getBody());
-
-        mock.verifyAll();
-    }
-
-    @Test
-    void shouldSerializeJsonMockResponse() {
-        MockClient mock = MockClient.register();
-
-        mock.expect(HttpMethod.GET, "http://zombo.com")
-                .thenReturn(MockResponse.bad(new JSONObject(of("message", "howdy"))));
-
-        HttpResponse<JsonNode> httpResponse = Unirest.get("http://zombo.com").asJson();
-
-        assertEquals(400, httpResponse.getStatus());
-        assertEquals("howdy", httpResponse.getBody().getObject().getString("message"));
-
-        mock.verifyAll();
-    }
-
-    @Test
-    void shouldSerializeObjectMockResponse() {
-        MockClient mock = MockClient.register();
-
-        mock.expect(HttpMethod.GET, "http://zombo.com")
-                .thenReturn(MockResponse.bad(new Pojo("Pears")));
-
-        HttpResponse<Pojo> httpResponse = Unirest.get("http://zombo.com").asObject(Pojo.class);
-
-        assertEquals(400, httpResponse.getStatus());
-        assertEquals("Pears", httpResponse.getBody().fruit);
-
-        mock.verifyAll();
-    }
-
-    private class DerpMapper implements kong.unirest.ObjectMapper {
+    private class DerpMapper implements ObjectMapper {
         @Override
         public <T> T readValue(String value, Class<T> valueType) {
             return (T)value;

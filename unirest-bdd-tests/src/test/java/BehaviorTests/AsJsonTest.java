@@ -25,9 +25,8 @@
 
 package BehaviorTests;
 
-import kong.unirest.*;
-import kong.unirest.json.JSONObject;
-import org.junit.jupiter.api.Assertions;
+import kong.unirest.core.*;
+import kong.unirest.core.json.JSONObject;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -41,8 +40,8 @@ class AsJsonTest extends BddTest {
     void whenNoBodyIsReturned() {
         HttpResponse<JsonNode> i = Unirest.get(MockServer.NOBODY).asJson();
 
-        Assertions.assertEquals(HttpStatus.OK, i.getStatus());
-        Assertions.assertEquals("{}", i.getBody().toString());
+        assertEquals(HttpStatus.OK, i.getStatus());
+        assertEquals("{}", i.getBody().toString());
     }
 
     @Test
@@ -50,7 +49,7 @@ class AsJsonTest extends BddTest {
         MockServer.setStringResponse(new JSONObject().put("f", 1).put("a", Arrays.asList(2, 3, 4)).toString());
         HttpResponse<JsonNode> i = Unirest.get(MockServer.GET).asJson();
 
-        Assertions.assertEquals("{\"f\":1,\"a\":[2,3,4]}", i.getBody().toString());
+        assertEquals("{\"f\":1,\"a\":[2,3,4]}", i.getBody().toString());
     }
 
     @Test
@@ -58,7 +57,7 @@ class AsJsonTest extends BddTest {
         MockServer.setStringResponse(new JSONObject().put("f", 1).put("a", Arrays.asList(2, 3, 4)).toString());
         HttpResponse<JsonNode> i = Unirest.get(MockServer.GET).asJson();
 
-        Assertions.assertEquals("{\n" +
+        assertEquals("{\n" +
                 "  \"f\": 1,\n" +
                 "  \"a\": [\n" +
                 "    2,\n" +
@@ -74,7 +73,7 @@ class AsJsonTest extends BddTest {
                 .queryString("foo", "bar")
                 .asJson();
 
-        assertJson(i.getBody());
+        assertJson(i);
     }
 
     @Test
@@ -83,7 +82,7 @@ class AsJsonTest extends BddTest {
                 .queryString("foo", "bar")
                 .asJsonAsync();
 
-        assertJson(r.get().getBody());
+        assertJson(r.get());
     }
 
     @Test
@@ -91,7 +90,7 @@ class AsJsonTest extends BddTest {
         Unirest.get(MockServer.GET)
                 .queryString("foo", "bar")
                 .asJsonAsync(r -> {
-                    assertJson(r.getBody());
+                    assertJson(r);
                     asyncSuccess();
                 });
 
@@ -102,12 +101,12 @@ class AsJsonTest extends BddTest {
     void failureToReturnValidJsonWillResultInAnEmptyNode() {
         HttpResponse<JsonNode> response = Unirest.get(MockServer.INVALID_REQUEST).asJson();
 
-        Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getStatus());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatus());
         assertNull(response.getBody());
-        Assertions.assertTrue(response.getParsingError().isPresent());
+        assertTrue(response.getParsingError().isPresent());
         UnirestParsingException ex = response.getParsingError().get();
-        Assertions.assertEquals("You did something bad", ex.getOriginalBody());
-        Assertions.assertEquals("kong.unirest.json.JSONException: Invalid JSON",
+        assertEquals("You did something bad", ex.getOriginalBody());
+        assertEquals("kong.unirest.core.json.JSONException: Invalid JSON",
                 response.getParsingError().get().getMessage());
 
     }
@@ -119,7 +118,7 @@ class AsJsonTest extends BddTest {
                     assertEquals(HttpStatus.BAD_REQUEST, response.getStatus());
                     assertNull(response.getBody());
                     assertTrue(response.getParsingError().isPresent());
-                    assertEquals("kong.unirest.json.JSONException: Invalid JSON",
+                    assertEquals("kong.unirest.core.json.JSONException: Invalid JSON",
                             response.getParsingError().get().getMessage());
 
                 }));
@@ -136,23 +135,10 @@ class AsJsonTest extends BddTest {
                 .getBody()
                 .getObject();
 
-        Assertions.assertEquals("{\"test\":\"it's a && b || c + 1!?\"}", test.toString());
+        assertEquals("{\"test\":\"it's a && b || c + 1!?\"}", test.toString());
     }
 
-    @Test
-    void mungeTheBodyFirst() {
-        JsonNode e = Unirest.get(MockServer.GET)
-                .queryString("foo", "bar")
-                .asString()
-                .mapBody(b -> {
-                    String newBody = b.split(" \\{")[0];
-                    return new JsonNode(newBody);
-                });
-
-        assertJson(e);
-    }
-
-    private void assertJson(JsonNode body) {
-        Assertions.assertEquals("bar", body.getObject().getJSONObject("params").getJSONArray("foo").get(0));
+    private void assertJson(HttpResponse<JsonNode> i) {
+        assertEquals("bar", i.getBody().getObject().getJSONObject("params").getJSONArray("foo").get(0));
     }
 }

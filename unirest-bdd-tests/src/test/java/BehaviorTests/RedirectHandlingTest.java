@@ -25,9 +25,8 @@
 
 package BehaviorTests;
 
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
-import org.junit.jupiter.api.Assertions;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.Unirest;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ExecutionException;
@@ -49,7 +48,7 @@ class RedirectHandlingTest extends BddTest {
         Unirest.config().followRedirects(false);
         HttpResponse response = Unirest.get(MockServer.REDIRECT).asEmpty();
 
-        Assertions.assertEquals(301, response.getStatus());
+        assertEquals(301, response.getStatus());
     }
 
     @Test
@@ -66,6 +65,6 @@ class RedirectHandlingTest extends BddTest {
         Unirest.config().followRedirects(false);
         HttpResponse response = Unirest.get(MockServer.REDIRECT).asEmptyAsync().get();
 
-        Assertions.assertEquals(301, response.getStatus());
+        assertEquals(301, response.getStatus());
     }
 }

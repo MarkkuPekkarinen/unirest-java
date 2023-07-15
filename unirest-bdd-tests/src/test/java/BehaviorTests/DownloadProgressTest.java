@@ -25,7 +25,7 @@
 
 package BehaviorTests;
 
-import kong.unirest.Unirest;
+import kong.unirest.core.Unirest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
@@ -63,7 +63,6 @@ class DownloadProgressTest extends BddTest {
 
         monitor.assertSpideyFileDownload("spidey.jpg");
     }
-
 
     @Test
     void canAddUploadProgressWithBytes() {

@@ -25,8 +25,7 @@
 
 package BehaviorTests;
 
-import kong.unirest.*;
-import org.junit.jupiter.api.Assertions;
+import kong.unirest.core.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +34,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static com.google.common.collect.Sets.newHashSet;
-import static BehaviorTests.TestUtils.rezFile;
+import static BehaviorTests.TestUtil.rezFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -84,8 +83,8 @@ class InterceptorTest extends BddTest {
     void totalFailure() throws Exception {
         Unirest.config().httpClient(TestUtil.getFailureClient()).interceptor(interceptor);
 
-        UnirestException ex = assertThrows(UnirestException.class, () -> Unirest.get(MockServer.GET).asEmpty());
-        Assertions.assertEquals("java.io.IOException: " + "Something horrible happened", ex.getMessage());
+        var ex = assertThrows(UnirestException.class, () -> Unirest.get(MockServer.GET).asEmpty());
+        assertEquals("java.io.IOException: " + "Something horrible happened", ex.getMessage());
     }
 
     @Test
@@ -95,21 +94,20 @@ class InterceptorTest extends BddTest {
 
         HttpResponse<String> response = Unirest.get(MockServer.GET).asString();
 
-        Assertions.assertEquals(542, response.getStatus());
-        Assertions.assertEquals("Something horrible happened", response.getStatusText());
+        assertEquals(542, response.getStatus());
+        assertEquals("Something horrible happened", response.getStatusText());
     }
 
     @Test
     void totalAsyncFailure_Recovery() throws Exception {
         interceptor.failResponse = true;
         Unirest.config()
-                .asyncClient(TestUtil.getFailureAsyncClient())
+                .httpClient(TestUtil.getFailureAsyncClient())
                 .interceptor(interceptor);
 
         HttpResponse<String> response = Unirest.get(MockServer.GET).asStringAsync().get();
 
-        Assertions.assertEquals(542, response.getStatus());
-        Assertions.assertEquals("Something horrible happened", response.getStatusText());
+        assertEquals(542, response.getStatus());
     }
 
     @Test
@@ -138,6 +136,7 @@ class InterceptorTest extends BddTest {
         RequestCapture cap;
         HttpRequestSummary reqSum;
         boolean failResponse;
+        boolean dothrow;
         private String name;
         private String value;
 
@@ -148,6 +147,9 @@ class InterceptorTest extends BddTest {
 
         @Override
         public void onRequest(HttpRequest<?> request, Config config) {
+            if(dothrow){
+                throw new RuntimeException("Something Happened");
+            }
             request.header(name, value);
         }
 

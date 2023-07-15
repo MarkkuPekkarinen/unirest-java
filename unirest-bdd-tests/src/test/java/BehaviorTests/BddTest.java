@@ -25,11 +25,10 @@
 
 package BehaviorTests;
 
-import kong.unirest.HttpResponse;
-import kong.unirest.JsonNode;
-import kong.unirest.Unirest;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.JsonNode;
+import kong.unirest.core.Unirest;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.util.concurrent.CountDownLatch;
@@ -38,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BddTest {
-    private static final TestObjectMapper objectMapper = new TestObjectMapper();
+    private static final JacksonObjectMapper objectMapper = new JacksonObjectMapper();
     private CountDownLatch lock;
     private boolean status;
     private String fail;
@@ -53,18 +52,10 @@ public class BddTest {
         status = false;
     }
 
-//    public static void freeze(Instant now) {
-//        Util.freezeClock(now);
-//    }
-//
-//    public static void reset() {
-//        Util.resetClock();
-//    }
-
     @AfterEach
     public void tearDown() {
         Unirest.shutDown(true);
-       // TestUtil.reset();
+        TestUtil.reset();
     }
 
     public void assertAsync()  {
@@ -94,7 +85,7 @@ public class BddTest {
     }
 
     public static RequestCapture parse(HttpResponse<JsonNode> response) {
-        Assertions.assertEquals(200, response.getStatus());
+        assertEquals(200, response.getStatus());
         return objectMapper.readValue(response.getBody().toString(), RequestCapture.class);
     }
 }

@@ -4,6 +4,43 @@ title: Documentation
 rightmenu: true
 ---
 
+<div id="spy-nav" class="right-menu" markdown="1">
+- [Requests](#requests)
+  - [Route Parameters](#route-parameters)
+  - [Query Parameters](#query-parameters)
+  - [Headers](#headers)
+    - [Basic Authentication](#basic-authentication)
+  - [Body Data](#body-data)
+    - [Entity Bodies](#entity-bodies)
+    - [JSON Patch Bodies](#json-patch-bodies)
+    - [Basic Forms](#basic-forms)
+    - [File Uploads](#file-uploads)
+    - [Upload Progress Monitoring](#upload-progress-monitoring)
+  - [Asynchronous Requests](#asynchronous-requests)
+  - [Paged Requests](#paged-requests)
+  - [Client Certificates](#client-certificates)
+  - [Proxies](#proxies)
+- [Responses](#responses)
+  - [Empty Responses](#empty-responses)
+  - [String Responses](#string-responses)
+  - [Object Mapped Responses](#object-mapped-responses)
+    - [Errors in Object or JSON parsing](#errors-in-object-or-json-parsing)
+    - [Mapping Error Objects](#mapping-error-objects)
+    - [Mapping one body type to another without an object mapper](#mapping-one-body-type-to-another-without-an-object-mapper)
+  - [File Responses](#file-responses)
+  - [JSON responses](#json-responses)
+  - [Large Responses](#large-responses)
+  - [Error Handling](#error-handling)
+  - [Caching](#caching)
+- [Configuration](#configuration)
+  - [Config Options](#config-options)
+  - [Custom Apache Clients](#custom-apache-clients)
+  - [Multiple Configurations](#multiple-configurations)
+  - [Object Mappers](#object-mappers)
+  - [Metrics](#metrics)
+- [Shutting Down](#shutting-down)
+</div>
+
 <h1 class="no-margin-top">Documentation</h1>
 
 ### Install With [Maven](https://mvnrepository.com/artifact/com.konghq/unirest-java)[:](https://repo.maven.apache.org/maven2/com/konghq/unirest-java/)
@@ -12,39 +49,18 @@ rightmenu: true
 <dependency>
     <groupId>com.konghq</groupId>
     <artifactId>unirest-java</artifactId>
-    <version>3.14.1</version>
+    <version>3.11.09</version>
 </dependency>
 
 <!-- OR as a snazzy new standalone jar with shaded dependencies -->
 <dependency>
     <groupId>com.konghq</groupId>
     <artifactId>unirest-java</artifactId>
-    <version>3.14.1</version>
+    <version>3.11.09</version>
     <classifier>standalone</classifier>
 </dependency>
 
 ```
-
-### Install With [Gradle](https://mvnrepository.com/artifact/com.konghq/unirest-java)[:](https://repo.maven.apache.org/maven2/com/konghq/unirest-java/)
-```gradle
-// Make sure you added the mavencentral repository
-repositories {
-    mavenCentral()
-}
-
-// Pull in as a traditional dependency
-dependencies {
-    // ... Your other dependencies
-    implementation 'com.konghq:unirest-java:3.11.09'
-}
-
-// OR as a snazzy new standalone
-dependencies {
-    // ... Your other dependencies
-    implementation 'com.konghq:unirest-java:3.11.09:standalone'
-}
-```
-
 
 ### Upgrading from Previous Versions
 See the [Upgrade Guide](https://github.com/Kong/unirest-java/blob/master/UPGRADE_GUIDE.md)
@@ -317,7 +333,7 @@ Most of the time when consuming RESTful services you probably want to map the re
 
 For this you need to provide the Unirest configuration with a implementation of ```ObjectMapper``` (see [Object Mappers](#object-mappers) for details.).
 
-If the response is JSON you are in luck and Unirest comes with a basic ```JsonObjectMapper``` based on Google GSON.  
+If the response is JSON you are in luck and Unirest comes with a basic ```JsonObjectMapper``` basic on Google GSON  
 
 Before an `asObject(Class)` it is necessary to provide a custom implementation of the `ObjectMapper` interface (if you do not wish to use the default mapper). This should be done only the first time, as the instance of the ObjectMapper will be shared globally.
 
@@ -535,7 +551,6 @@ Changing Unirest's config should ideally be done once, or rarely. There are seve
 
 | Builder Method  | Impact | Default |
 | ------------- | ------------- | ------------- |
-| ```socketTimeout(int)``` | Sets the socket timeout for all requests in millis  | 60000 |
 | ```connectTimeout(int)``` | Sets the connection timeout for all requests in millis  | 10000 |
 | ```concurrency(int, int)``` | Sets concurrency rates; max total, max per route  | 200, 20 |
 | ```proxy(proxy)``` | Sets a proxy object for negotiating proxy servers. Can include auth credentials  |  |
@@ -556,7 +571,6 @@ Changing Unirest's config should ideally be done once, or rarely. There are seve
 | ```connectionTTL(Duration)``` | Add total time to live (TTL) by [Duration](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html). Good for moderns Java APIs. | -1  |
 | ```errorHandler(Consumer<HttpResponse<?>> consumer)``` | Set a global error handler that will be invoked for any status > 400 or a parsing error | | 
 | ```interceptor(Interceptor value)``` | Set a global Interceptor handler that will be invoked before and after each request | | 
-| ```hostNameVerifier(HostNameVerifier value)``` | Set a custom HostNameVerifier for the security configuration | DefaultHostNameVerifier | 
 | ```defaultBaseUrl(String value)``` | Set a default base URL to be used for all requests that do not already contain a scheme |  | 
 
 ##  Global Interceptor
@@ -650,7 +664,7 @@ By providing more feature rich UniMetric instances you could easily calculate av
 Unirest starts a background event loop and your Java application won't be able to exit until you manually shutdown all the threads by invoking:
 
 ```java
-Unirest.shutDown();
+Unirest.shutdown();
 ```
 
 Once shutdown, using Unirest again will re-init the system

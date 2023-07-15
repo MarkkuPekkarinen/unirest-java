@@ -29,13 +29,14 @@ package BehaviorTests;
 import com.google.common.base.Strings;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import io.javalin.http.Cookie;
-import io.javalin.http.staticfiles.Location;
+
+import io.javalin.http.HttpStatus;
+import io.javalin.websocket.WsConfig;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.jetty.util.UrlEncoded;
 
-import javax.servlet.ServletOutputStream;
-
+import jakarta.servlet.ServletOutputStream;
+import io.javalin.http.Cookie;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,12 +44,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import java.util.function.Consumer;
 import java.util.zip.GZIPOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 public class MockServer {
+
     public static int timesCalled;
     private static int pages = 1;
     private static int onPage = 1;
@@ -57,12 +61,13 @@ public class MockServer {
     private static String retrySeconds = "";
     private static final List<Pair<String, String>> responseHeaders = new ArrayList<>();
     private static final List<Cookie> cookies = new ArrayList<>();
-
-    private static final TestObjectMapper om = new TestObjectMapper();
+    private static final WebSocketHandler ws = new WebSocketHandler();
+    private static final JacksonObjectMapper om = new JacksonObjectMapper();
     private static String responseBody;
     public static final int PORT = 4567;
     public static final String HOST = "http://localhost:" + PORT;
-    public static final String WINDOWS_LATIN_1_FILE = HOST + "/data/cp1250.txt";
+    public static final String WEBSOCKET = "ws://localhost:" + PORT + "/websocket";
+    public static final String WINDOWS_LATIN_1_FILE = HOST + "/public/data/cp1250.txt";
     public static final String REDIRECT = HOST + "/redirect";
     public static final String JAVALIN = HOST + "/sparkle/{spark}/yippy";
     public static final String BINARYFILE = HOST + "/binary";
@@ -96,17 +101,19 @@ public class MockServer {
         pages = 1;
         onPage = 1;
         timesCalled = 0;
+        WebSocketHandler.reset();
         retryTimes = 0;
         errorCode = 400;
     }
 
     static {
         app = Javalin.create(c -> {
-            c.addStaticFiles("public/", Location.CLASSPATH);
+            c.staticFiles.add("public/");
 
         }).start(PORT);
         app.error(404, MockServer::notFound);
         app.before(c -> timesCalled++);
+        app.ws("/websocket", ws);
         app.delete("/delete", MockServer::jsonResponse);
         app.get("/sparkle/{spark}/yippy", MockServer::sparkle);
         app.post("/post", MockServer::jsonResponse);
@@ -127,6 +134,7 @@ public class MockServer {
         app.get("/paged", MockServer::paged);
         app.post("/raw", MockServer::echo);
         app.get("/error", MockServer::error);
+        app.get("/hello", MockServer::helloWOrld);
         Runtime.getRuntime().addShutdownHook(new Thread(app::stop));
         try {
             new CountDownLatch(1).await(2, TimeUnit.SECONDS);
@@ -135,19 +143,29 @@ public class MockServer {
         }
     }
 
+
+    private static void helloWOrld(Context c) {
+         c.result("Hello World");
+    }
+
+
+    public static void main(String[] args){
+
+    }
+
     private static void sparkle(Context request) {
         Map<String, String> sparks = new HashMap<>();
         sparks.put("contentType()", request.contentType());
         sparks.put("contextPath()", request.contextPath());
         sparks.put("host()", request.host());
         sparks.put("ip()", request.ip());
-        sparks.put("pathInfo()", request.req.getPathInfo());
+        sparks.put("pathInfo()", request.req().getPathInfo());
         sparks.put("port()", String.valueOf(request.port()));
         sparks.put("protocol()", request.protocol());
         sparks.put("scheme()", request.scheme());
-        sparks.put("servletPath()", request.req.getServletPath());
-        sparks.put("requestMethod()", request.method());
-        sparks.put("uri()", request.req.getRequestURI());
+        sparks.put("servletPath()", request.req().getServletPath());
+        //sparks.put("requestMethod()", request.me());
+        sparks.put("uri()", request.req().getRequestURI());
         sparks.put("url()", request.url());
         sparks.put("userAgent()", request.userAgent());
         sparks.put("queryString()", request.queryString());
@@ -179,12 +197,12 @@ public class MockServer {
     }
 
     private static Object file(Context context) throws Exception {
-        File f = TestUtils.rezFile("/spidey.jpg");
-        context.res.setContentType("application/octet-stream");
-        context.res.setHeader("Content-Disposition", "attachment;filename=image.jpg");
-        context.res.setHeader("Content-Length", String.valueOf(f.length()));
+        File f = TestUtil.rezFile("/spidey.jpg");
+        context.contentType("application/octet-stream");
+        context.header("Content-Disposition", "attachment;filename=image.jpg");
+        context.header("Content-Length", String.valueOf(f.length()));
         context.status(200);
-        final ServletOutputStream out = context.res.getOutputStream();
+        final ServletOutputStream out = context.res().getOutputStream();
         final FileInputStream in = new FileInputStream(f);
         IOUtils.copy(in, out);
         out.close();
@@ -197,7 +215,7 @@ public class MockServer {
     }
 
     private static void redirect(Context request) {
-        request.redirect("/get", 301);
+        request.redirect("/get", HttpStatus.MOVED_PERMANENTLY);
     }
 
     private static void inValid(Context request) {
@@ -206,10 +224,10 @@ public class MockServer {
     }
 
     private static Object emptyGzipResponse(Context response) throws Exception {
-        response.res.setHeader("Content-Encoding", "gzip");
-        response.res.setContentType("application/json");
-        response.res.setStatus(200);
-        response.res.getOutputStream().close();
+        response.res().setHeader("Content-Encoding", "gzip");
+        response.res().setContentType("application/json");
+        response.res().setStatus(200);
+        response.res().getOutputStream().close();
         return null;
     }
 
@@ -228,8 +246,8 @@ public class MockServer {
     }
 
     private static Optional<String> simpleResponse(Context context) {
-        cookies.forEach(context::cookie);
-        responseHeaders.forEach(h -> context.res.addHeader(h.key, h.value));
+        cookies.forEach(c -> context.cookie(c));
+        responseHeaders.forEach(h -> context.res().addHeader(h.key, h.value));
 
         if (responseBody != null) {
             return Optional.of(responseBody);
@@ -258,7 +276,7 @@ public class MockServer {
          if(compress){
              c.result(zip(content));
          } else {
-             c.res.setCharacterEncoding(StandardCharsets.UTF_8.name());
+             c.res().setCharacterEncoding(StandardCharsets.UTF_8.name());
              c.result(content);
          }
     }
@@ -312,6 +330,34 @@ public class MockServer {
 
     public static void clearHeaders() {
         responseHeaders.clear();
+    }
+
+    public static class WebSocketHandler implements Consumer<WsConfig> {
+
+        private static String onOpenMessage = "Open";
+        private WsConfig handler;
+        public static Map<String, String> headers = new HashMap<>();
+
+        public static void reset() {
+            headers.clear();
+            onOpenMessage = "Open";
+        }
+
+        public static void expectOpeningMessage(String message) {
+            onOpenMessage = message;
+        }
+
+        @Override
+        public void accept(WsConfig wsHandler) {
+            this.handler = wsHandler;
+            this.handler.onMessage(c -> {
+                c.send("thank you");
+            });
+            this.handler.onConnect(c -> {
+                headers = c.headerMap();
+                c.send(onOpenMessage);
+            });
+        }
     }
 
     public static void retryTimes(int numberOfTimeToFail, int status, Double seconds){

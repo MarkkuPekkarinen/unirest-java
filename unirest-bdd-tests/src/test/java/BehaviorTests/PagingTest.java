@@ -25,10 +25,9 @@
 
 package BehaviorTests;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import kong.unirest.PagedList;
-import kong.unirest.Unirest;
+import kong.unirest.core.PagedList;
+import kong.unirest.core.Unirest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -44,7 +43,7 @@ class PagingTest extends BddTest {
                         r -> r.getHeaders().getFirst("nextPage")
                 );
 
-        Assertions.assertEquals(10, result.size());
+        assertEquals(10, result.size());
     }
 
     @Test
@@ -57,7 +56,7 @@ class PagingTest extends BddTest {
                         r -> r.getHeaders().getFirst("nextPage")
                 );
 
-        Assertions.assertEquals(10, result.size());
+        assertEquals(10, result.size());
     }
 
     @Test
@@ -69,6 +68,6 @@ class PagingTest extends BddTest {
                         r -> null
                 );
 
-        Assertions.assertEquals(1, result.size());
+        assertEquals(1, result.size());
     }
 }

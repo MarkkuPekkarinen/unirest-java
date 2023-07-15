@@ -25,13 +25,12 @@
 
 package BehaviorTests;
 
-import kong.unirest.Unirest;
-import kong.unirest.json.JSONObject;
-import org.junit.jupiter.api.Assertions;
+import kong.unirest.core.Unirest;
+import kong.unirest.core.json.JSONObject;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -49,7 +48,7 @@ class DefectTest extends BddTest {
 
     @Test
     void nullAndObjectValuesInMap() {
-        Map<String, Object> queryParams = new LinkedHashMap<>();
+        Map<String, Object> queryParams = new HashMap<>();
         queryParams.put("foo", null);
         queryParams.put("baz", "qux");
 
@@ -67,7 +66,7 @@ class DefectTest extends BddTest {
         JSONObject body = Unirest.get("http://httpbin.org/gzip")
                 .asJsonAsync().get().getBody().getObject();
 
-        Assertions.assertEquals(true, body.getBoolean("gzipped"));
-        Assertions.assertEquals("gzip", body.getJSONObject("headers").getString("Accept-Encoding"));
+        assertEquals(true, body.getBoolean("gzipped"));
+        assertEquals("gzip", body.getJSONObject("headers").getString("Accept-Encoding"));
     }
 }

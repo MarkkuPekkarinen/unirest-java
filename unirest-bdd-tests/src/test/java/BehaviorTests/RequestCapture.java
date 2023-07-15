@@ -32,12 +32,11 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.ListMultimap;
 import io.javalin.http.Context;
-import kong.unirest.*;
-import org.junit.jupiter.api.Assertions;
+import kong.unirest.core.*;
 
-import javax.servlet.MultipartConfigElement;
-import javax.servlet.ServletException;
-import javax.servlet.http.Part;
+import jakarta.servlet.MultipartConfigElement;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Part;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,7 +47,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.System.getProperty;
-import static kong.unirest.JsonPatchRequest.CONTENT_TYPE;
+import static kong.unirest.core.JsonPatchRequest.CONTENT_TYPE;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RequestCapture {
@@ -75,7 +74,7 @@ public class RequestCapture {
     public RequestCapture(Context req) {
         url = req.url();
         queryString = req.queryString();
-        method = HttpMethod.valueOf(req.method());
+        method = HttpMethod.valueOf(req.method().name());
         writeHeaders(req);
         writeQuery(req);
         populateParams(req);
@@ -94,7 +93,7 @@ public class RequestCapture {
     }
 
     public void writeBody(Context req) {
-        if (Strings.nullToEmpty(req.contentType()).equals(JsonPatchRequest.CONTENT_TYPE)) {
+        if (Strings.nullToEmpty(req.contentType()).equals(CONTENT_TYPE)) {
             String body = req.body();
             jsonPatches = new JsonPatch(body);
             this.body = jsonPatches.toString();
@@ -115,17 +114,17 @@ public class RequestCapture {
     }
 
     public void writeMultipart(Context req) {
-        req.req.setAttribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement(getProperty("java.io.tmpdir")));
+        req.req().setAttribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement(getProperty("java.io.tmpdir")));
 
         try {
-            for (Part p : req.req.getParts()) {
+            for (Part p : req.req().getParts()) {
                 if (!Strings.isNullOrEmpty(p.getSubmittedFileName())) {
                     buildFilePart(p);
                 } else {
                     buildUrlEncodedParamPart(p);
                 }
             }
-        } catch (ServletException | IOException e) {
+        } catch (ServletException e) {
             this.body = req.body();
             parseBodyToFormParams();
         } catch (Exception e) {
@@ -171,15 +170,15 @@ public class RequestCapture {
     }
 
     private RequestCapture writeHeaders(Context req) {
-        Collections.list(req.req.getHeaderNames())
-                .forEach(name -> Collections.list(req.req.getHeaders(name))
+        Collections.list(req.req().getHeaderNames())
+                .forEach(name -> Collections.list(req.req().getHeaders(name))
                         .forEach(value -> headers.put(name, value)));
         return this;
     }
 
     public RequestCapture assertHeader(String key, String value) {
         assertTrue(headers.containsKey(key), String.format("Expect header of '%s' but none was present", key));
-        assertTrue(headers.get(key).contains(value), "Expected Header Value Failed expected: " + value + " But Got: " + headers.get(key));
+        assertTrue(headers.get(key).contains(value), "Expected Header Value Failed: " + value);
         return this;
     }
 
@@ -234,7 +233,7 @@ public class RequestCapture {
     }
 
     public RequestCapture assertMethod(HttpMethod get) {
-        Assertions.assertEquals(get, method);
+        assertEquals(get, method);
         return this;
     }
 
@@ -253,8 +252,8 @@ public class RequestCapture {
     }
 
     public RequestCapture assertJsonPatch(JsonPatchOperation op, String path, Object value) {
-        Assertions.assertNotNull(jsonPatches, "Asserting JSONPatch but no patch object present");
-        Assertions.assertTrue(jsonPatches.getOperations().contains(new JsonPatchItem(op, path, value)));
+        assertNotNull(jsonPatches, "Asserting JSONPatch but no patch object present");
+        assertTrue(jsonPatches.getOperations().contains(new JsonPatchItem(op, path, value)));
         return this;
     }
 

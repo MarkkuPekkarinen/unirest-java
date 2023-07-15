@@ -1,3 +1,31 @@
+## 4.0.3
+* Another tweek to the BOM
+* Update dependencies (Jackson, GSON, Junit/Mockito)
+
+## 4.0.2
+* Fix BOM coordinates
+
+## 4.0.0
+* Java 11+ is now a requirement
+* HTTP2 support
+* WebSocket support
+* Apache Replaced by native Java HTTP Client
+* Modular Maven config with bom
+* Zero external runtime dependencies by default
+* You MUST include JSON support on your own ([see upgrade guide](UPGRADE_GUIDE.md))
+* New Maven coordinates
+* New packaging in order to not conflict with older versions
+
+## 3.14.5
+* fix issue introduced with 3.14.4 where binary data is not read
+
+## 3.14.4
+* Fix NullPointerException in MockClient
+* Fix argument validation in MonitoringInputStream
+
+## 3.14.3
+* Attempt to skip recovering the body from large binary responses like files when an error occurs.
+
 ## 3.14.2
 * issue #469, do not add bytes twice in MonitoringInputStream
 
@@ -54,7 +82,7 @@
 ## 3.13.1
 * add some new features to MockClient
     * mockClient.reset() will clear any expectations
-    * mockClient.defaultResponse() returns a default response expectation for when an explicit expectation was not matched 
+    * mockClient.defaultResponse() returns a default response expectation for when an explicit expectation was not matched
     * thenReturn(Supplier<String> supplier) allows you to set the response body as a supplier to be invoked at request time.
 
 ## 3.13.0
@@ -65,23 +93,23 @@
 ## 3.12.0
 * Bump GSON to 2.8.8
 * Support honoring Retry-After headers on 429/529 for regular (not async) requests.
-  * This feature will likely not make it to async until Unirest 4.
-  * Can be enabled with ```Unirest.config().retryAfter(true);```
-  * Has a max re-try counter with a default of 10 which can be set with:
-    * ```Unirest.config().retryAfter(true, maxNumberOfRetries);```
-  * 🔥 While Honoring The Retry-After header the thread will be blocked! 🔥
-    * It is highly recommend that this feature be used in conjunction with a circuit-breaking framework. 
-    * Let's say you have a web app that is making Unirest calls to downstream system X. You have many requests invoking this same service. If X starts to return 429's and Unirest is waiting on ALL of those requests. Unirest will quickly consume all your threads. At this time Unirest has no circuit-breaker of it's own to detect that this is happening. It will simply be happy to pause all of your threads forever.
-    
-## 3.11.13 
+    * This feature will likely not make it to async until Unirest 4.
+    * Can be enabled with ```Unirest.config().retryAfter(true);```
+    * Has a max re-try counter with a default of 10 which can be set with:
+        * ```Unirest.config().retryAfter(true, maxNumberOfRetries);```
+    * 🔥 While Honoring The Retry-After header the thread will be blocked! 🔥
+        * It is highly recommend that this feature be used in conjunction with a circuit-breaking framework.
+        * Let's say you have a web app that is making Unirest calls to downstream system X. You have many requests invoking this same service. If X starts to return 429's and Unirest is waiting on ALL of those requests. Unirest will quickly consume all your threads. At this time Unirest has no circuit-breaker of it's own to detect that this is happening. It will simply be happy to pause all of your threads forever.
+
+## 3.11.13
 * Bump Jackson version in object-mapper-jackson to 2.12.4
 * Bump test and CI dependencies
 
-## 3.11.12 
+## 3.11.12
 * make the default basic cache concurrent.
 
 ## 3.11.11
-* useSystemProperties is not overwritten and should be reset back to true on reset
+* useSystemProperties should be reset back to false on reset
 
 ## 3.11.10
 * issue #394 use the configured Object Mapper rather than always Json

@@ -25,9 +25,8 @@
 
 package BehaviorTests;
 
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
-import org.junit.jupiter.api.Assertions;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.Unirest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -52,8 +51,8 @@ class GenericMappingTest extends BddTest {
                 .asString()
                 .map(Integer::valueOf);
 
-        Assertions.assertEquals(123456, response.getBody().intValue());
-        Assertions.assertEquals(200, response.getStatus());
-        Assertions.assertEquals("cheddar", response.getHeaders().getFirst("cheese"));
+        assertEquals(123456, response.getBody().intValue());
+        assertEquals(200, response.getStatus());
+        assertEquals("cheddar", response.getHeaders().getFirst("cheese"));
     }
 }

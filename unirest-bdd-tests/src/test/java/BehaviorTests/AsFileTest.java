@@ -25,12 +25,10 @@
 
 package BehaviorTests;
 
-import kong.unirest.HttpResponse;
-import kong.unirest.ProgressMonitor;
+import kong.unirest.core.HttpResponse;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import kong.unirest.Unirest;
+import kong.unirest.core.Unirest;
 
 import java.io.File;
 import java.nio.file.FileAlreadyExistsException;
@@ -39,12 +37,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AsFileTest extends BddTest {
 
     private final Path test = Paths.get("results.json");
-    private final TestObjectMapper om = new TestObjectMapper();
+    private final JacksonObjectMapper om = new JacksonObjectMapper();
 
     @Override @AfterEach
     public void tearDown() {
@@ -96,7 +95,7 @@ class AsFileTest extends BddTest {
                             .assertParam("talking", "heads")
                             .assertParam("param3", "こんにちは")
                             .assertStatus(200);
-                    Assertions.assertEquals(test.toFile().getPath(), r.getBody().getPath());
+                    assertEquals(test.toFile().getPath(), r.getBody().getPath());
                     asyncSuccess();
                 });
 
@@ -105,7 +104,7 @@ class AsFileTest extends BddTest {
 
     @Test
     void canDownloadABinaryFile() throws Exception {
-        File f1 = TestUtils.rezFile("/spidey.jpg");
+        File f1 = TestUtil.rezFile("/spidey.jpg");
 
         File f2 = Unirest.get(MockServer.BINARYFILE)
                 .asFile(test.toString())
@@ -122,7 +121,7 @@ class AsFileTest extends BddTest {
         HttpResponse<File> f2 = Unirest.get(MockServer.BINARYFILE)
                 .asFile(test.toString());
 
-        Assertions.assertTrue(f2.getParsingError().isPresent());
+        assertTrue(f2.getParsingError().isPresent());
         assertTrue(f2.getParsingError().get().getCause().getCause() instanceof FileAlreadyExistsException);
     }
 
@@ -153,6 +152,7 @@ class AsFileTest extends BddTest {
 
         assertEquals(f1, f2);
     }
+
 
     @Test
     void dontReadFilesWhenInError() {

@@ -28,12 +28,8 @@ package BehaviorTests;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import kong.unirest.HttpMethod;
-import kong.unirest.HttpRequestSummary;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
-import org.eclipse.jetty.server.Request;
-import org.junit.jupiter.api.Assertions;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.Unirest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -55,9 +51,7 @@ class ErrorParsingTest extends BddTest {
                             assertEquals("not json", r.getParsingError().get().getOriginalBody());
                         }
                 )
-                .ifSuccess(s -> {
-                    throw new RuntimeException("no");
-                });
+                .ifSuccess(s -> fail("no"));
     }
 
     @Test
@@ -115,7 +109,7 @@ class ErrorParsingTest extends BddTest {
 
     @Test
     void failsIfErrorResponseCantBeMapped() {
-        TestObjectMapper om = new TestObjectMapper();
+        JacksonObjectMapper om = new JacksonObjectMapper();
         om.om.configure(JsonGenerator.Feature.IGNORE_UNKNOWN, false);
         om.om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
 
@@ -128,7 +122,7 @@ class ErrorParsingTest extends BddTest {
         NotTheError error = request.mapError(NotTheError.class);
 
         assertNull(error.merp);
-        Assertions.assertEquals("{\"message\":\"boom!\"}", request.getParsingError().get().getOriginalBody());
+        assertEquals("{\"message\":\"boom!\"}", request.getParsingError().get().getOriginalBody());
     }
 
     @Test
@@ -142,9 +136,7 @@ class ErrorParsingTest extends BddTest {
                     assertEquals(400, e.getStatus());
                     assertErrorThing(e.getBody());
                     errorCalled = true;
-                }).ifSuccess(e -> {
-                    throw new AssertionError("No");
-                });
+                }).ifSuccess(e -> {throw new AssertionError("No");});
 
         assertTrue(errorCalled);
     }

@@ -25,10 +25,9 @@
 
 package BehaviorTests;
 
-import kong.unirest.HttpMethod;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
-import org.junit.jupiter.api.Assertions;
+import kong.unirest.core.HttpMethod;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.Unirest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -71,8 +70,8 @@ class VerbTest extends BddTest {
     void head() {
         HttpResponse response = Unirest.head(MockServer.GET).asEmpty();
 
-        Assertions.assertEquals(200, response.getStatus());
-        Assertions.assertEquals("text/plain;charset=utf-8", response.getHeaders().getFirst("Content-Type"));
+        assertEquals(200, response.getStatus());
+        assertEquals("text/plain;charset=utf-8", response.getHeaders().getFirst("Content-Type"));
     }
 
     @Test
@@ -88,7 +87,7 @@ class VerbTest extends BddTest {
         Unirest.request("CHEESE", MockServer.CHEESE)
                 .asObject(RequestCapture.class)
                 .getBody()
-                .assertMethod(HttpMethod.valueOf("CHEESE"))
+                .assertMethod(HttpMethod.valueOf("INVALID"))
                 .assertBody("");
     }
 }

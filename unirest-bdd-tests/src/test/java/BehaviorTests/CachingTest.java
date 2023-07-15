@@ -25,8 +25,10 @@
 
 package BehaviorTests;
 
-import kong.unirest.*;
-import org.junit.jupiter.api.Assertions;
+import kong.unirest.core.Clock;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.JsonNode;
+import kong.unirest.core.Unirest;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -35,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 import static com.google.common.collect.ImmutableMap.of;
+import static kong.unirest.core.Cache.builder;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CachingTest extends BddTest {
@@ -106,7 +109,7 @@ class CachingTest extends BddTest {
 
     @Test
     void canSetAMaxDepthOfCache() {
-        Unirest.config().cacheResponses(Cache.builder().depth(5));
+        Unirest.config().cacheResponses(builder().depth(5));
 
         IntStream.range(0,10).forEach(i -> {
             Unirest.get(MockServer.GET).queryString("no",i).asEmpty();
@@ -128,16 +131,16 @@ class CachingTest extends BddTest {
     @Test
     void canSetATTLOfACacheEntry() {
         Instant now = Instant.now();
-        TestUtil.freeze(now);
+        Clock.freeze(now);
 
-        Unirest.config().cacheResponses(Cache.builder().maxAge(5, TimeUnit.MINUTES));
+        Unirest.config().cacheResponses(builder().maxAge(5, TimeUnit.MINUTES));
 
         Unirest.get(MockServer.GET).asEmpty();
         Unirest.get(MockServer.GET).asEmpty();
 
         assertEquals(1, MockServer.timesCalled);
 
-        TestUtil.freeze(now.plus(10, ChronoUnit.MINUTES));
+        Clock.freeze(now.plus(10, ChronoUnit.MINUTES));
 
         Unirest.get(MockServer.GET).asEmpty();
 
@@ -149,7 +152,7 @@ class CachingTest extends BddTest {
         HttpResponse<JsonNode> response1 = Unirest.get(MockServer.GET).queryString(of("a",1)).asJson();
         HttpResponse<JsonNode> response2 = Unirest.get(MockServer.GET).queryString(of("a",1)).asJson();
 
-        Assertions.assertNotEquals(
+        assertNotEquals(
                 response1.getBody().getObject().getString("requestId"),
                 response2.getBody().getObject().getString("requestId")
         );
@@ -162,30 +165,10 @@ class CachingTest extends BddTest {
         HttpResponse<JsonNode> response1 = Unirest.get(MockServer.GET).queryString(of("a",1)).asJson();
         HttpResponse<JsonNode> response2 = Unirest.get(MockServer.GET).queryString(of("a",1)).asJson();
 
-        Assertions.assertEquals(
+        assertEquals(
                 response1.getBody().getObject().getString("requestId"),
                 response2.getBody().getObject().getString("requestId")
         );
         assertEquals(1,  MockServer.timesCalled);
-    }
-
-    @Test
-    void load() {
-        Unirest.config().cacheResponses(true);
-        IntStream.range(0, 100)
-                .parallel()
-                .forEach(i ->
-                {
-                    HttpResponse r = Unirest.get(MockServer.PASSED_PATH_PARAM)
-                    .routeParam("params", key(i)).asString();
-                    Assertions.assertEquals(200, r.getStatus());
-                });
-    }
-
-    private String key(int i) {
-        if(i % 2 == 0){
-            return "psycho";
-        }
-        return "disco";
     }
 }

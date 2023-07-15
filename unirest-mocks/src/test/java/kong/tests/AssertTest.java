@@ -25,13 +25,13 @@
 
 package kong.tests;
 
-import kong.unirest.*;
+import kong.unirest.core.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.function.Supplier;
 
-import static kong.unirest.HttpMethod.GET;
-import static kong.unirest.HttpMethod.POST;
+import static kong.unirest.core.HttpMethod.GET;
+import static kong.unirest.core.HttpMethod.POST;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AssertTest extends Base {
@@ -191,8 +191,7 @@ class AssertTest extends Base {
 
     @Test
     void canBeStrictAndForbidAnythingWithoutAMatch() {
-        client.defaultResponse()
-                .withStatus(400, "wtf")
+        client.defaultResponse().withStatus(400, "wtf")
                 .thenReturn("boo");
 
         client.expect(GET, otherPath).thenReturn("Hi");

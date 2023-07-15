@@ -25,14 +25,12 @@
 
 package BehaviorTests;
 
-import kong.unirest.Empty;
-import org.junit.jupiter.api.Assertions;
+import kong.unirest.core.Empty;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.Unirest;
 import org.junit.jupiter.api.Test;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 class AsEmptyTest extends BddTest {
@@ -42,9 +40,9 @@ class AsEmptyTest extends BddTest {
         Unirest.get(MockServer.ERROR_RESPONSE)
                 .asEmpty()
                 .ifFailure(response -> {
-                    assertEquals("Bad Request", response.getStatusText());
+                    assertEquals(400, response.getStatus());
                 })
-                .ifSuccess(s -> {throw new RuntimeException("fail");});
+                .ifSuccess(s -> fail("fail"));
     }
 
     @Test
@@ -53,8 +51,8 @@ class AsEmptyTest extends BddTest {
         HttpResponse<Empty> res = Unirest.get(MockServer.GET).asEmpty();
 
         assertNull(res.getBody());
-        Assertions.assertEquals(200, res.getStatus());
-        Assertions.assertEquals("json;charset=utf-8", res.getHeaders().getFirst("Content-Type"));
+        assertEquals(200, res.getStatus());
+        assertEquals("json;charset=utf-8", res.getHeaders().getFirst("Content-Type"));
     }
 
     @Test
@@ -63,8 +61,8 @@ class AsEmptyTest extends BddTest {
         HttpResponse<Empty> res = Unirest.get(MockServer.GET).asEmptyAsync().get();
 
         assertNull(res.getBody());
-        Assertions.assertEquals(200, res.getStatus());
-        Assertions.assertEquals("json;charset=utf-8", res.getHeaders().getFirst("Content-Type"));
+        assertEquals(200, res.getStatus());
+        assertEquals("json;charset=utf-8", res.getHeaders().getFirst("Content-Type"));
     }
 
     @Test
@@ -74,8 +72,8 @@ class AsEmptyTest extends BddTest {
         Unirest.get(MockServer.GET)
                 .asEmptyAsync(res -> {
                     assertNull(res.getBody());
-                    Assertions.assertEquals(200, res.getStatus());
-                    Assertions.assertEquals("json;charset=utf-8", res.getHeaders().getFirst("Content-Type"));
+                    assertEquals(200, res.getStatus());
+                    assertEquals("json;charset=utf-8", res.getHeaders().getFirst("Content-Type"));
                     asyncSuccess();
                 });
 

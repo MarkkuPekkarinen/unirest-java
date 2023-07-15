@@ -25,9 +25,8 @@
 
 package BehaviorTests;
 
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
-import org.junit.jupiter.api.Assertions;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.Unirest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,8 +38,11 @@ class GZipTest extends BddTest {
     void emptyGzip() {
         HttpResponse<String> result = Unirest.post(MockServer.EMPTY_GZIP)
                 .asString();
-        Assertions.assertFalse(result.getParsingError().isPresent());
-        Assertions.assertEquals("", result.getBody());
+        result.getParsingError().ifPresent(e -> {
+            e.printStackTrace();
+        });
+        assertFalse(result.getParsingError().isPresent());
+        assertEquals("", result.getBody());
     }
 
     @Test
@@ -53,7 +55,7 @@ class GZipTest extends BddTest {
                 .assertParam("zipme", "up")
                 .assertHeader("Accept-Encoding","gzip");
 
-        Assertions.assertEquals(0, resp.getHeaders().get("Content-Encoding").size());
+        assertEquals(0, resp.getHeaders().get("Content-Encoding").size());
     }
 
     @Test
@@ -67,7 +69,7 @@ class GZipTest extends BddTest {
                 .assertParam("zipme", "up")
                 .assertHeader("Accept-Encoding", "gzip");
 
-        Assertions.assertEquals(0, resp.getHeaders().get("Content-Encoding").size());
+        assertEquals(0, resp.getHeaders().get("Content-Encoding").size());
     }
 
     @Test

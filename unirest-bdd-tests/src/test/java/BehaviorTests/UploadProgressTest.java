@@ -25,14 +25,14 @@
 
 package BehaviorTests;
 
-import kong.unirest.Unirest;
+import kong.unirest.core.Unirest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileInputStream;
 
 import static java.util.Arrays.asList;
-import static BehaviorTests.TestUtils.rezFile;
+import static BehaviorTests.TestUtil.rezFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class UploadProgressTest extends BddTest {

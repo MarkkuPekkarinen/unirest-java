@@ -25,54 +25,20 @@
 
 package BehaviorTests;
 
-import kong.unirest.*;
+import kong.unirest.core.ContentType;
+import kong.unirest.core.MultipartMode;
+import kong.unirest.core.Unirest;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.net.URISyntaxException;
 
 import static java.util.Arrays.asList;
-import static BehaviorTests.TestUtils.getFileBytes;
-import static BehaviorTests.TestUtils.rezFile;
+import static BehaviorTests.TestUtil.getFileBytes;
+import static BehaviorTests.TestUtil.rezFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class MultiPartFormPostingTest extends BddTest {
-
-    @Test
-    void overridingContentType(){
-        Unirest.config().setDefaultHeader("Accept", "application/json")
-                .setDefaultHeader("Content-Type", "application/json")
-                .setDefaultHeader("Authorization", "Bearer xxx-abc-123");
-
-        Unirest.post(MockServer.POST)
-                .basicAuth("username", "password")
-                .contentType("multipart/form-data")
-                .field("username", "xxx")
-                .field("token", "abc")
-                .field("grant_type", "password")
-                .asObject(RequestCapture.class)
-                .getBody()
-                .assertHeaderSize("Content-Type", 1)
-                .assertHeader("Content-Type", "multipart/form-data");
-    }
-
-    @Test
-    void overridingForcingMultiTypeOverridesHeader(){
-        Unirest.config().setDefaultHeader("Accept", "application/json")
-                .setDefaultHeader("Content-Type", "application/json")
-                .setDefaultHeader("Authorization", "Bearer xxx-abc-123");
-
-        Unirest.post(MockServer.POST)
-                .basicAuth("username", "password")
-                .multiPartContent()
-                .field("username", "xxx")
-                .field("token", "abc")
-                .field("grant_type", "password")
-                .asObject(RequestCapture.class)
-                .getBody()
-                .assertHeaderSize("Content-Type", 1)
-                .assertMultiPartContentType();
-    }
 
     @Test
     void testMultipart() throws Exception {
@@ -239,7 +205,15 @@ class MultiPartFormPostingTest extends BddTest {
                 .assertFileName(filename);
     }
 
-
+    @Test
+    void simpleMultiPart() {
+        Unirest.post(MockServer.POST)
+                .field("foo", "bar")
+                .field("fruit", "apple")
+                .asObject(RequestCapture.class)
+                .getBody()
+                .assertParam("foo","bar");
+    }
 
     @Test
     void canSetModeToStrictForLegacySupport() {
@@ -258,7 +232,7 @@ class MultiPartFormPostingTest extends BddTest {
 
     @Test
     void canPostInputStreamWithContentType() throws Exception {
-        File file = TestUtils.getImageFile();
+        File file = TestUtil.getImageFile();
         Unirest.post(MockServer.POST)
                 .field("testfile", new FileInputStream(file), ContentType.IMAGE_JPEG, "image.jpg")
                 .asObject(RequestCapture.class)
@@ -271,7 +245,7 @@ class MultiPartFormPostingTest extends BddTest {
 
     @Test
     void canPostInputStream() throws Exception {
-        File file = TestUtils.getImageFile();
+        File file = TestUtil.getImageFile();
         Unirest.post(MockServer.POST)
                 .field("testfile", new FileInputStream(file), "image.jpg")
                 .asObject(RequestCapture.class)
@@ -284,23 +258,23 @@ class MultiPartFormPostingTest extends BddTest {
 
     @Test
     void postFieldsAsMap() throws URISyntaxException {
-        File file = TestUtils.getImageFile();
+        File file = TestUtil.getImageFile();
 
         Unirest.post(MockServer.POST)
-                .fields(TestUtils.mapOf("big", "bird", "charlie", 42, "testfile", file, "gonzo", null))
+                .fields(TestUtil.mapOf("big", "bird", "charlie", 42, "testfile", file, "gonzo", null))
                 .asObject(RequestCapture.class)
                 .getBody()
-                .assertMultiPartContentType()
                 .assertParam("big", "bird")
                 .assertParam("charlie", "42")
                 .assertParam("gonzo", "")
+                .assertMultiPartContentType()
                 .getFile("image.jpg")
                 .assertFileType("application/octet-stream");
     }
 
     @Test
     void postFileWithoutContentType() {
-        File file = TestUtils.getImageFile();
+        File file = TestUtil.getImageFile();
         Unirest.post(MockServer.POST)
                 .field("testfile", file)
                 .asObject(RequestCapture.class)
@@ -312,7 +286,7 @@ class MultiPartFormPostingTest extends BddTest {
 
     @Test
     void postFileWithContentType() {
-        File file = TestUtils.getImageFile();
+        File file = TestUtil.getImageFile();
         Unirest.post(MockServer.POST)
                 .field("testfile", file, ContentType.IMAGE_JPEG.getMimeType())
                 .asObject(RequestCapture.class)
@@ -402,7 +376,7 @@ class MultiPartFormPostingTest extends BddTest {
     void passFileAsByteArray() {
         Unirest.post(MockServer.POST)
                 .field("foo", "bar")
-                .field("filecontents", TestUtils.getFileBytes("/image.jpg"), ContentType.IMAGE_JPEG, "image.jpg")
+                .field("filecontents", TestUtil.getFileBytes("/image.jpg"), ContentType.IMAGE_JPEG, "image.jpg")
                 .asObject(RequestCapture.class)
                 .getBody()
                 .assertMultiPartContentType()
@@ -418,7 +392,6 @@ class MultiPartFormPostingTest extends BddTest {
                 .field("testfile", (Object)null, ContentType.IMAGE_JPEG.getMimeType())
                 .asObject(RequestCapture.class)
                 .getBody()
-                .assertContentType("application/x-www-form-urlencoded; charset=UTF-8")
                 .assertParam("testfile", "");
     }
 

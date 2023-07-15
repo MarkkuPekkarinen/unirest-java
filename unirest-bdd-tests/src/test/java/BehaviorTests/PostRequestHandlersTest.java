@@ -26,10 +26,9 @@
 package BehaviorTests;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.Unirest;
 
 import java.util.function.Consumer;
 
@@ -67,7 +66,7 @@ class PostRequestHandlersTest extends BddTest {
                 .ifSuccess(r -> fail("should not have been called"));
 
         assertNotNull(captured);
-        Assertions.assertEquals(400, captured.getStatus());
+        assertEquals(400, captured.getStatus());
     }
 
     @Test
@@ -81,30 +80,12 @@ class PostRequestHandlersTest extends BddTest {
                 .ifSuccess(r -> fail("should not have been called"));
 
         assertNotNull(captured);
-        Assertions.assertEquals(200, captured.getStatus());
-        Assertions.assertTrue(captured.getParsingError().isPresent());
-        Assertions.assertEquals("not what you expect", captured.getParsingError().get().getOriginalBody());
+        assertEquals(200, captured.getStatus());
+        assertTrue(captured.getParsingError().isPresent());
+        assertEquals("not what you expect", captured.getParsingError().get().getOriginalBody());
     }
 
-    @Test
-    void canConfigureAGlobalErrorHandler(){
-        Error error = new Error();
-        Unirest.config().errorHandler(error);
 
-        Unirest.get(MockServer.INVALID_REQUEST).asEmpty();
-
-        Assertions.assertEquals(400, error.httpResponse.getStatus());
-    }
-
-    @Test
-    void canConfigureAGlobalErrorHandlerAsync()  throws Exception {
-        Error error = new Error();
-        Unirest.config().errorHandler(error);
-
-        Unirest.get(MockServer.INVALID_REQUEST).asEmptyAsync().get();
-
-        Assertions.assertEquals(400, error.httpResponse.getStatus());
-    }
 
     private static class Error implements Consumer<HttpResponse<?>> {
 
@@ -125,7 +106,7 @@ class PostRequestHandlersTest extends BddTest {
             .queryString("foo", "bar")
             .asObject(RequestCapture.class);
 
-        Assertions.assertTrue(response.isSuccess());
+        assertTrue(response.isSuccess());
     }
 
     @Test
@@ -134,7 +115,7 @@ class PostRequestHandlersTest extends BddTest {
             .queryString("foo", "bar")
             .asObject(RequestCapture.class);
 
-        Assertions.assertFalse(response.isSuccess());
+        assertFalse(response.isSuccess());
     }
 
     @Test
@@ -145,6 +126,6 @@ class PostRequestHandlersTest extends BddTest {
             .queryString("foo", "bar")
             .asObject(RequestCapture.class);
 
-        Assertions.assertFalse(response.isSuccess());
+        assertFalse(response.isSuccess());
     }
 }

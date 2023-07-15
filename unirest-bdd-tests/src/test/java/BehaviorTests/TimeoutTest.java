@@ -27,9 +27,9 @@
 
 package BehaviorTests;
 
-import kong.unirest.Config;
-import kong.unirest.Unirest;
-import kong.unirest.UnirestException;
+import kong.unirest.core.Config;
+import kong.unirest.core.Unirest;
+import kong.unirest.core.UnirestException;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -51,12 +51,12 @@ class TimeoutTest extends BddTest {
         try {
             Unirest.get(address).asString();
         } catch (Exception e) {
-            if (System.currentTimeMillis() - start > Config.DEFAULT_CONNECTION_TIMEOUT + 100) { // Add 100ms for code execution
+            if (System.currentTimeMillis() - start > Config.DEFAULT_CONNECT_TIMEOUT + 100) { // Add 100ms for code execution
                 fail();
             }
         }
         Unirest.config().reset();
-        Unirest.config().connectTimeout(2000).socketTimeout(10000);
+        Unirest.config().connectTimeout(2000);
 
         start = System.currentTimeMillis();
         try {
@@ -71,13 +71,13 @@ class TimeoutTest extends BddTest {
     @Test
     @Disabled // this is flakey
     void parallelTest() throws InterruptedException {
-        Unirest.config().connectTimeout(10).socketTimeout(5);
+        Unirest.config().connectTimeout(10);
 
         long start = System.currentTimeMillis();
         makeParallelRequests();
         long smallerConcurrencyTime = (System.currentTimeMillis() - start);
 
-        Unirest.config().connectTimeout(200).socketTimeout(20);
+        Unirest.config().connectTimeout(200);
         start = System.currentTimeMillis();
         makeParallelRequests();
         long higherConcurrencyTime = (System.currentTimeMillis() - start);

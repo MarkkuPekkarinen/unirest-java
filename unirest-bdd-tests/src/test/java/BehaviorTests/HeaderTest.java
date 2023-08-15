@@ -338,6 +338,15 @@ class HeaderTest extends BddTest {
     }
 
     @Test
+    void nullValueTests() {
+        Unirest.get(MockServer.GET)
+                .header("foo", null)
+                .asObject(RequestCapture.class)
+                .getBody()
+                .assertHeader("foo","");
+    }
+
+    @Test
     void nullTests() {
         Unirest.get(MockServer.GET)
                 .header("foo","bar")
@@ -357,5 +366,45 @@ class HeaderTest extends BddTest {
                 .getBody()
                 .assertHeader("foo","replace")
                 .assertHeader("two","bar");
+    }
+
+    @Test
+    void multipleContentHeaders() {
+        Unirest.post(MockServer.GET)
+                .contentType("application/json")
+                .header("Content-Type", "xml")
+                .asObject(RequestCapture.class)
+                .getBody()
+                .assertHeaderSize("Content-Type", 2);
+    }
+
+    @Test
+    void contentTypeHeadersCanBeOverwritten() {
+        Unirest.post(MockServer.POST)
+                .field("one","a")
+                .contentType("application/json")
+                .asObject(RequestCapture.class)
+                .getBody()
+                .assertHeaderSize("Content-Type", 1)
+                .assertContentType("application/json");
+    }
+
+    @Test
+    void defaultContentTypes() {
+        Unirest.post(MockServer.POST)
+                .field("one","a")
+                .asObject(RequestCapture.class)
+                .getBody()
+                .assertHeaderSize("Content-Type", 1)
+                .assertContentType("application/x-www-form-urlencoded; charset=UTF-8");
+    }
+
+    @Test
+    void nullHeaderValues() {
+        Unirest.get(MockServer.GET)
+                .header("foo", null)
+                .asObject(RequestCapture.class)
+                .getBody()
+                .assertHeader("foo", "");
     }
 }

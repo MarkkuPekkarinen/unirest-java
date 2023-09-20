@@ -28,15 +28,13 @@ package kong.unirest.core;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 class RetryAfter {
-    private static final Set<Integer> RETRY_CODES = new HashSet<>(Arrays.asList(429, 529, 301));
-    private static final String RETRY_AFTER = "Retry-After";;
+    private static final Set<Integer> RETRY_CODES = Set.of(429, 503, 529, 301);
+    private static final String RETRY_AFTER = "Retry-After";
     private static final RetryAfter EMPTY = new RetryAfter(0L);
     private long millies;
 
@@ -48,14 +46,14 @@ class RetryAfter {
         return from(response.getHeaders());
     }
 
-    static boolean isRetriable(HttpResponse response) {
-        return RETRY_CODES.contains(response.getStatus()) && response.getHeaders().containsKey(RETRY_AFTER);
-    }
-
     static RetryAfter from(Headers response) {
         String value = response.getFirst(RETRY_AFTER);
         return tryAsDouble(value)
                 .orElseGet(() -> tryAsDateTime(value));
+    }
+
+    boolean isRetriable(HttpResponse response) {
+        return RETRY_CODES.contains(response.getStatus()) && response.getHeaders().containsKey(RETRY_AFTER);
     }
 
     private static RetryAfter tryAsDateTime(String value) {

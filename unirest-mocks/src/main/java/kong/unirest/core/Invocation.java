@@ -35,18 +35,16 @@ import java.util.stream.Stream;
 
 import static java.lang.System.lineSeparator;
 
-class Invocation implements Expectation, ExpectedResponse {
+class Invocation implements Expectation {
     private Routes routes;
-    private Function<ObjectMapper, String> response = o -> null;
+    private List<HttpRequest> requests = new ArrayList<>();
     private Headers expectedHeaders = new Headers();
     private Headers expectedQueryParams = new Headers();
-    private List<HttpRequest> requests = new ArrayList<>();
-    private Headers responseHeaders = new Headers();
     private Boolean expected = false;
     private BodyMatcher expectedBody;
     private MatchStatus expectedBodyStatus;
-    private int responseStatus = 200;
-    private String responseText = "Ok";
+    private ExpectedResponseRecord expectedResponse = new ExpectedResponseRecord();
+    private Function<HttpRequest<?>, ExpectedResponse> functionalResponse = r -> expectedResponse;
 
     public Invocation(Routes routes){
         this.routes = routes;
@@ -60,10 +58,7 @@ class Invocation implements Expectation, ExpectedResponse {
 
     Invocation(Routes routes, Invocation other) {
         this.routes = routes;
-        this.response = other.response;
-        this.responseStatus = other.responseStatus;
-        this.responseText = other.responseText;
-        this.responseHeaders.putAll(other.responseHeaders);
+        this.expectedResponse = other.expectedResponse;
     }
 
     Invocation() {
@@ -72,47 +67,33 @@ class Invocation implements Expectation, ExpectedResponse {
 
     @Override
     public ExpectedResponse thenReturn(String body) {
-        this.response = o -> body;
-        return this;
+        return expectedResponse.thenReturn(body);
     }
 
     @Override
     public ExpectedResponse thenReturn(JSONElement jsonObject) {
-        this.response = o -> jsonObject.toString();
-        return this;
+        return expectedResponse.thenReturn(jsonObject);
     }
 
     @Override
     public ExpectedResponse thenReturn(Object pojo) {
-        if(pojo instanceof MockResponse){
-            var res = (MockResponse)pojo;
-            return thenReturn(res);
-        } else {
-            this.response = o -> o.writeValue(pojo);
-        }
-        return this;
-    }
-
-    private ExpectedResponse thenReturn(MockResponse res) {
-        this.response = o -> res.getBody() == null ? null : String.valueOf(res.getBody());
-        return withStatus(res.getStatus()).withHeaders(res.getHeaders());
+        return expectedResponse.thenReturn(pojo);
     }
 
     @Override
     public ExpectedResponse thenReturn(Supplier<String> supplier) {
-        this.response = o -> supplier.get();
-        return this;
+        return expectedResponse.thenReturn(supplier);
+    }
+
+    @Override
+    public void thenReturn(Function<HttpRequest<?>, ExpectedResponse> fun) {
+        this.functionalResponse = fun;
     }
 
     RawResponse getResponse(Config config, HttpRequest request) {
-        return new MockRawResponse(response.apply(getObjectMapper(request, config)),
-                responseHeaders, responseStatus, responseText, config, request.toSummary());
-    }
-
-    private ObjectMapper getObjectMapper(HttpRequest request, Config config) {
-        return Util.tryCast(request, BaseRequest.class)
-                .map(BaseRequest::getObjectMapper)
-                .orElseGet(() -> config.getObjectMapper());
+        return tryCast(functionalResponse.apply(request), ExpectedResponseRecord.class)
+                .map(e -> e.toRawResponse(config, request))
+                .orElseThrow(() -> new UnirestException("No Result Configured For Response"));
     }
 
     private Headers allHeaders() {
@@ -155,7 +136,7 @@ class Invocation implements Expectation, ExpectedResponse {
 
     @Override
     public ExpectedResponse thenReturn() {
-        return this;
+        return expectedResponse;
     }
 
     public void verify() {
@@ -230,30 +211,6 @@ class Invocation implements Expectation, ExpectedResponse {
 
     public List<HttpRequest> getRequests() {
         return requests;
-    }
-
-    @Override
-    public ExpectedResponse withHeader(String key, String value) {
-        this.responseHeaders.add(key, value);
-        return this;
-    }
-
-    @Override
-    public ExpectedResponse withHeaders(Headers value) {
-        value.all().forEach(h -> withHeader(h.getName(), h.getValue()));
-        return this;
-    }
-
-    @Override
-    public ExpectedResponse withStatus(int httpStatus) {
-        return withStatus(httpStatus,"");
-    }
-
-    @Override
-    public ExpectedResponse withStatus(int httpStatus, String statusMessage) {
-        this.responseStatus = httpStatus;
-        this.responseText = statusMessage;
-        return this;
     }
 
     public Boolean isExpected() {

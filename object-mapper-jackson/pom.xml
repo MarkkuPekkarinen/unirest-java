@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.konghq</groupId>
         <artifactId>unirest-java-parent</artifactId>
-        <version>4.0.11-SNAPSHOT</version>
+        <version>4.1.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>unirest-objectmapper-jackson</artifactId>
@@ -34,15 +34,4 @@
             <version>${jackson.version}</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <!-- Build a standalone jar with package-relocated dependencies to avoid class-loading conflicts -->
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
-
 </project>

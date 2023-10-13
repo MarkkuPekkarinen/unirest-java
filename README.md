@@ -21,7 +21,7 @@ You can use a maven bom to manage the modules:
       <dependency>
           <groupId>com.konghq</groupId>
           <artifactId>unirest-java-bom</artifactId>
-          <version>4.0.3</version>
+          <version>4.0.12</version>
           <type>pom</type>
           <scope>import</scope>
       </dependency>
@@ -72,13 +72,4 @@ Our [Documentation](http://kong.github.io/unirest-java/)
     <artifactId>unirest-java</artifactId>
     <version>3.14.1</version>
 </dependency>
-
-<!-- OR as a snazzy new standalone jar with shaded dependencies -->
-<dependency>
-    <groupId>com.konghq</groupId>
-    <artifactId>unirest-java</artifactId>
-    <version>3.14.1</version>
-    <classifier>standalone</classifier>
-</dependency>
-
 ```

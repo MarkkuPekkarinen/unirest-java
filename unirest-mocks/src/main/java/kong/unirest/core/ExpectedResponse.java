@@ -27,7 +27,13 @@ package kong.unirest.core;
 
 import kong.unirest.core.json.JSONElement;
 
+import java.util.function.Supplier;
+
 public interface ExpectedResponse {
+    static ExpectedResponse of(int status) {
+        return new ExpectedResponseRecord().withStatus(status);
+    }
+
     /**
      * adds a header to the expected response
      * @param key the header key
@@ -78,4 +84,11 @@ public interface ExpectedResponse {
      * @return The ExpectedResponse
      */
     ExpectedResponse thenReturn(Object pojo);
+
+    /**
+     * A supplier for the expected body which will get invoked at the time of build the response.
+     * @param supplier the expected response body supplier
+     * @return The ExpectedResponse
+     */
+    ExpectedResponse thenReturn(Supplier<String> supplier);
 }

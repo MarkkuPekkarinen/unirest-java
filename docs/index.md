@@ -34,7 +34,6 @@ rightmenu: true
   - [Caching](#caching)
 - [Configuration](#configuration)
   - [Config Options](#config-options)
-  - [Custom Apache Clients](#custom-apache-clients)
   - [Multiple Configurations](#multiple-configurations)
   - [Object Mappers](#object-mappers)
   - [Metrics](#metrics)
@@ -45,21 +44,39 @@ rightmenu: true
 
 ### Install With [Maven](https://mvnrepository.com/artifact/com.konghq/unirest-java)[:](https://repo.maven.apache.org/maven2/com/konghq/unirest-java/)
 ```xml
-<!-- Pull in as a traditional dependency -->
+<dependencyManagement>
+    <dependencies>
+        <!-- https://mvnrepository.com/artifact/com.konghq/unirest-java-bom -->
+        <dependency>
+            <groupId>com.konghq</groupId>
+            <artifactId>unirest-java-bom</artifactId>
+            <version>4.0.12</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
+<dependencies>
+<!-- https://mvnrepository.com/artifact/com.konghq/unirest-java-core -->
 <dependency>
     <groupId>com.konghq</groupId>
-    <artifactId>unirest-java</artifactId>
-    <version>3.11.09</version>
+    <artifactId>unirest-java-core</artifactId>
 </dependency>
 
-<!-- OR as a snazzy new standalone jar with shaded dependencies -->
+<!-- pick a JSON module if you want to parse JSON include one of these: -->
+<!-- Google GSON -->
 <dependency>
     <groupId>com.konghq</groupId>
-    <artifactId>unirest-java</artifactId>
-    <version>3.11.09</version>
-    <classifier>standalone</classifier>
+    <artifactId>unirest-object-mappers-gson</artifactId>
 </dependency>
 
+<!-- OR maybe you like Jackson better? -->
+<dependency>
+    <groupId>com.konghq</groupId>
+    <artifactId>unirest-objectmapper-jackson</artifactId>
+</dependency>
+</dependencies>
 ```
 
 ### Upgrading from Previous Versions
@@ -388,7 +405,7 @@ Sometimes with REST API's the service will return a error object that can be par
 ```
 
 ### Mapping one body type to another without an object mapper
-If you don't want to provide a full ObjectMapper implimentation you may  use  a simple function to map the response
+If you don't want to provide a full ObjectMapper implementation you may  use  a simple function to map the response
 
 ```java
     int body = Unirest.get("http://httpbin/count")
@@ -542,7 +559,7 @@ All configuration is now done through ```Unirest.config()```
            .addInterceptor(new MyCustomInterceptor());
 ```
 
-Changing Unirest's config should ideally be done once, or rarely. There are several background threads spawned by both Unirest itself and Apache HttpAsyncClient. Once Unirest has been activated configuration options that are involved in creating the client cannot be changed without an explicit shutdown or reset.
+Changing Unirest's config should ideally be done once, or rarely. Once Unirest has been activated configuration options that are involved in creating the client cannot be changed without an explicit shutdown or reset.
 
 
 
@@ -577,27 +594,6 @@ This can be useful for logging or injecting common attributes.
 
 See [Interceptor.java](https://github.com/Kong/unirest-java/blob/master/unirest/src/main/java/kong/unirest/Interceptor.java) for details.
 
-## Custom Apache Clients
-Unirest leverages Apache Http Client under the hood, this is not considered to be a permemant requirement and future versions of Unirest may replace Apache with something else.
-
-You can set your own custom Apache HttpClient and HttpAsyncClient. 
-Note that Unirest settings like timeouts or interceptors are not applied to custom clients.
-
-```java
-     Unirest.config()
-            .httpClient(ApacheClient.builder(myClient))
-            .asyncClient(ApacheAsyncClient.builder(myAsyncClient));
-```
-
-You can also override Unirest's implementation of the Apache request config
-
-```java
-     Unirest.config()
-            .httpClient(ApacheClient.builder(client)
-                .withRequestConfig((c,r) -> RequestConfig.custom().build()
-                );
-```
-
 
 ## Multiple Configurations
 As usual, Unirest maintains a primary single instance. Sometimes you might want different configurations for different systems. You might also want an instance rather than a static context for testing purposes.
@@ -617,13 +613,12 @@ As usual, Unirest maintains a primary single instance. Sometimes you might want 
 **WARNING!** If you get a new instance of unirest YOU are responsible for shutting it down when the JVM shuts down. It is not tracked or shut down by ```Unirest.shutDown();```
 
 ## Object Mappers
-Unirest offers a few different Object Mapper's based on popular JSON libraries (Jackson and GSON). These can be included either as traditional or shaded jars:
+Unirest offers a few different Object Mapper's based on popular JSON libraries (Jackson and GSON).
 ```xml
 <!-- https://mvnrepository.com/artifact/com.konghq/unirest-objectmapper-jackson -->
 <dependency>
     <groupId>com.konghq</groupId>
     <artifactId>unirest-objectmapper-jackson</artifactId>
-    <version>3.11.09</version>
 </dependency>
 
 
@@ -631,7 +626,6 @@ Unirest offers a few different Object Mapper's based on popular JSON libraries (
 <dependency>
     <groupId>com.konghq</groupId>
     <artifactId>unirest-object-mappers-gson</artifactId>
-    <version>3.11.09</version>
 </dependency>
 ```
 

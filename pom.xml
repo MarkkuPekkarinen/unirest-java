@@ -4,7 +4,7 @@
     <groupId>com.konghq</groupId>
     <artifactId>unirest-java-parent</artifactId>
     <packaging>pom</packaging>
-    <version>4.0.11-SNAPSHOT</version>
+    <version>4.1.1-SNAPSHOT</version>
     <name>unirest</name>
     <description>Parent pom for unirest packages</description>
     <url>http://github.com/Kong/unirest-java/</url>
@@ -32,8 +32,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jackson.version>2.15.2</jackson.version>
         <main.dir>${project.basedir}</main.dir>
-        <junit.version>5.9.3</junit.version>
-        <mockito.version>5.4.0</mockito.version>
+        <junit.version>5.10.0</junit.version>
+        <mockito.version>5.6.0</mockito.version>
         <maven-checkstyle-plugin.version>3.3.0</maven-checkstyle-plugin.version>
     </properties>
 
@@ -292,51 +292,6 @@
                 </executions>
             </plugin>
         </plugins>
-
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <!-- Configured in pluginManagement instead of plugins, because we do not want a shaded parent POM -->
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-shade-plugin</artifactId>
-                    <version>3.4.1</version>
-                    <executions>
-                        <execution>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>shade</goal>
-                            </goals>
-                            <configuration>
-                                <!-- Will output 2 jars: the original, and the shaded one -->
-                                <shadedArtifactAttached>true</shadedArtifactAttached>
-
-                                <!-- final name of the shaded jar will be ${project.artifactId}-standalone -->
-                                <shadedClassifierName>standalone</shadedClassifierName>
-
-                                <relocations>
-                                    <relocation>
-                                        <!-- Jackson -->
-                                        <pattern>com.fasterxml.jackson.</pattern>
-                                        <shadedPattern>unirest.shaded.com.fasterxml.jackson.</shadedPattern>
-                                    </relocation>
-                                    <relocation>
-                                        <!-- Google GSON -->
-                                        <pattern>com.google.</pattern>
-                                        <shadedPattern>unirest.shaded.com.google.</shadedPattern>
-                                    </relocation>
-                                </relocations>
-
-                                <!-- NOTE: Any dependencies of the project will not show up in the standalone pom.
-                                This means that if those dependencies are not properly relocated and there is a class-loading conflict,
-                                user would not be able to figure out where the conflicting dependency is. -->
-                                <createDependencyReducedPom>true</createDependencyReducedPom>
-
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-            </plugins>
-        </pluginManagement>
     </build>
 
 

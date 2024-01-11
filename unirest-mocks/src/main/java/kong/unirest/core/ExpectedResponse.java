@@ -29,9 +29,19 @@ import kong.unirest.core.json.JSONElement;
 
 import java.util.function.Supplier;
 
+/**
+ * The expected response of a assertion.
+ * Contains things like response status, body and headers.
+ */
 public interface ExpectedResponse {
+    /**
+     * Create a independent expected response. useful for
+     * systems creating test-doubles rather than strict mocking
+     * @param status the response status.
+     * @return a new expected response with this status.
+     */
     static ExpectedResponse of(int status) {
-        return new ExpectedResponseRecord().withStatus(status);
+        return new ExpectedResponseRecord(null).withStatus(status);
     }
 
     /**
@@ -91,4 +101,12 @@ public interface ExpectedResponse {
      * @return The ExpectedResponse
      */
     ExpectedResponse thenReturn(Supplier<String> supplier);
+
+    /**
+     * verify that all Expectations was fulfilled at least once.
+     * @throws UnirestAssertion when all expectations have not been fulfilled
+     */
+    void verify();
+
+    void verify(Times times);
 }

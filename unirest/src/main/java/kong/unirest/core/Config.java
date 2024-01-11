@@ -57,7 +57,6 @@ public class Config {
     private String defaultResponseEncoding = StandardCharsets.UTF_8.name();
     private Function<Config, Client> clientBuilder;
     private boolean requestCompressionOn = true;
-    private boolean automaticRetries;
     private boolean verifySsl = true;
     private KeyStore keystore;
     private Supplier<String> keystorePassword = () -> null;
@@ -69,7 +68,7 @@ public class Config {
     private CompoundInterceptor interceptor = new CompoundInterceptor();
     private String defaultBaseUrl;
     private CacheManager cache;
-    private HttpClient.Version version;
+    private HttpClient.Version version = HttpClient.Version.HTTP_2;
     private RetryStrategy retry;
 
     public Config() {
@@ -86,7 +85,6 @@ public class Config {
         useSystemProperties = false;
         cookieManagement = true;
         requestCompressionOn = true;
-        automaticRetries = true;
         verifySsl = true;
         keystore = null;
         keystorePassword = null;
@@ -97,6 +95,7 @@ public class Config {
         interceptor = new CompoundInterceptor();
         retry = null;
         objectMapper = () -> CoreFactory.getCore().getObjectMapper();
+        version = HttpClient.Version.HTTP_2;
 
         try {
             clientBuilder = JavaClient::new;
@@ -432,19 +431,6 @@ public class Config {
     }
 
     /**
-     * Automaticly retry certain recoverable errors like socket timeouts. Up to 4 times
-     * Note that currently this only works on synchronous calls.
-     * Default is true
-     *
-     * @param value a bool is its true or not.
-     * @return this config object
-     */
-    public Config automaticRetries(boolean value) {
-        automaticRetries = value;
-        return this;
-    }
-
-    /**
      * Sets a cookie policy
      * Acceptable values:
      *  'default' (same as Netscape),
@@ -594,6 +580,7 @@ public class Config {
      * @return this config
      */
     public Config version(HttpClient.Version value) {
+        Objects.requireNonNull(value);
         version = value;
         return this;
     }
@@ -769,13 +756,6 @@ public class Config {
      */
     public boolean isRequestCompressionOn() {
         return requestCompressionOn;
-    }
-
-    /**
-     * @return if automatic retries are on (default is false)
-     */
-    public boolean isAutomaticRetries() {
-        return automaticRetries;
     }
 
     /**

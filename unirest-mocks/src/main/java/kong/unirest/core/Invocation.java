@@ -43,8 +43,9 @@ class Invocation implements Expectation {
     private Boolean expected = false;
     private BodyMatcher expectedBody;
     private MatchStatus expectedBodyStatus;
-    private ExpectedResponseRecord expectedResponse = new ExpectedResponseRecord();
+    private ExpectedResponseRecord expectedResponse = new ExpectedResponseRecord(this);
     private Function<HttpRequest<?>, ExpectedResponse> functionalResponse = r -> expectedResponse;
+    private Times expectedTimes = Times.atLeastOnce();
 
     public Invocation(Routes routes){
         this.routes = routes;
@@ -92,7 +93,10 @@ class Invocation implements Expectation {
 
     RawResponse getResponse(Config config, HttpRequest request) {
         return tryCast(functionalResponse.apply(request), ExpectedResponseRecord.class)
-                .map(e -> e.toRawResponse(config, request))
+                .map(e -> {
+                    e.setExpectation(this);
+                    return e.toRawResponse(config, request);
+                })
                 .orElseThrow(() -> new UnirestException("No Result Configured For Response"));
     }
 
@@ -139,14 +143,28 @@ class Invocation implements Expectation {
         return expectedResponse;
     }
 
+    @Override
     public void verify() {
-        if (requests.isEmpty()) {
-            throw new UnirestAssertion("A expectation was never invoked! %s", details());
+        verify(null);
+    }
+
+    @Override
+    public void verify(Times times) {
+        var thisTime = times == null ? expectedTimes : times;
+        var match = thisTime.matches(requests.size());
+        if(!match.isSuccess()){
+            throw new UnirestAssertion("%s\n%s", match.getMessage(), details());
         }
     }
 
+    @Override
+    public Expectation times(Times times) {
+        this.expectedTimes = times;
+        return this;
+    }
+
     private String details() {
-        StringBuilder sb  = new StringBuilder(routes.getMethod().name())
+        var sb  = new StringBuilder(routes.getMethod().name())
                 .append(" ")
                 .append(routes.getPath()).append(lineSeparator());
         if(expectedHeaders.size() > 0){

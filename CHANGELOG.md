@@ -1,3 +1,7 @@
+## 4.2.1
+* #503 Remove old retry setting that no longer works with the Java client
+* #504 allow asserting just one expectation verification on mock asserts
+
 ## 4.1.1
 * issue #493: Copy status text from MockResponse
 * MockClient not properly evaluating verb in matching invokes

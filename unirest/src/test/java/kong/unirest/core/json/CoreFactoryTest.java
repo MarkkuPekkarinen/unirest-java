@@ -26,30 +26,51 @@
 package kong.unirest.core.json;
 
 import kong.unirest.core.UnirestConfigException;
+import kong.unirest.core.UnirestException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 class CoreFactoryTest {
 
+    @AfterEach
+    void tearDown() {
+        try {
+            CoreFactory.autoConfig();
+        } catch (Exception e){}
+    }
+
     @Test
     void whenThereIsNoImpl() {
+        CoreFactory.setEngine(null);
         var ex = assertThrows(UnirestConfigException.class,
                 () -> CoreFactory.getCore());
-        assertEquals("No Json Parsing Implementation Provided\n" +
-                "Please add a dependency for a Unirest JSON Engine. This can be one of:\n" +
-                "<!-- Google Gson (the previous core impl) -->\n" +
-                "<dependency>\n" +
-                "  <groupId>com.konghq</groupId>\n" +
-                "  <artifactId>unirest-object-mappers-gson</artifactId>\n" +
-                "  <version>${latest-version}</version>\n" +
-                "</dependency>\n" +
-                "\n" +
-                "<!-- Jackson -->\n" +
-                "<dependency>\n" +
-                "  <groupId>com.konghq</groupId>\n" +
-                "  <artifactId>unirest-object-mappers-jackson</artifactId>\n" +
-                "  <version>${latest-version}</version>\n" +
-                "</dependency>)", ex.getMessage());
+        assertEquals(String.format("No Json Parsing Implementation Provided%n" +
+                "Please add a dependency for a Unirest JSON Engine. This can be one of:%n" +
+                "<!-- Google Gson (the previous core impl) -->%n" +
+                "<dependency>%n" +
+                "  <groupId>com.konghq</groupId>%n" +
+                "  <artifactId>unirest-object-mappers-gson</artifactId>%n" +
+                "  <version>${latest-version}</version>%n" +
+                "</dependency>%n" +
+                "%n" +
+                "<!-- Jackson -->%n" +
+                "<dependency>%n" +
+                "  <groupId>com.konghq</groupId>%n" +
+                "  <artifactId>unirest-object-mappers-jackson</artifactId>%n" +
+                "  <version>${latest-version}</version>%n" +
+                "</dependency>)%n" +
+                "%n" +
+                "Alternatively you may register your own JsonEngine directly with CoreFactory.setEngine(JsonEngine jsonEngine)"), ex.getMessage());
+    }
+
+    @Test
+    void canSetItManually() {
+        var mock = mock(JsonEngine.class);
+        CoreFactory.setEngine(mock);
+        assertThat(CoreFactory.getCore()).isSameAs(mock);
     }
 }

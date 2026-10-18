@@ -3,10 +3,11 @@
     <parent>
         <artifactId>unirest-java-parent</artifactId>
         <groupId>com.konghq</groupId>
-        <version>4.2.8-SNAPSHOT</version>
+        <version>4.10.3-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>unirest-java-bom</artifactId>
+    <name>unirest-java-bom</name>
     <packaging>pom</packaging>
 
     <properties>
@@ -24,17 +25,22 @@
             </dependency>
             <dependency>
                 <groupId>com.konghq</groupId>
-                <artifactId>unirest-objectmapper-jackson</artifactId>
+                <artifactId>unirest-modules-jackson</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.konghq</groupId>
-                <artifactId>unirest-object-mappers-gson</artifactId>
+                <artifactId>unirest-modules-jackson-legacy</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.konghq</groupId>
-                <artifactId>unirest-mocks</artifactId>
+                <artifactId>unirest-modules-gson</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.konghq</groupId>
+                <artifactId>unirest-modules-mocks</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>

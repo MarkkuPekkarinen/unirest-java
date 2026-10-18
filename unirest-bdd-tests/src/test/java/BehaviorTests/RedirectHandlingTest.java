@@ -44,9 +44,18 @@ class RedirectHandlingTest extends BddTest {
     }
 
     @Test
+    void redirectOnPost() {
+        // per the java client a POST will get redirected to a GET
+        Unirest.post(MockServer.REDIRECT)
+                .asObject(RequestCapture.class)
+                .getBody()
+                .assertUrl("http://localhost:4567/get");
+    }
+
+    @Test
     void canDisableRedirects(){
         Unirest.config().followRedirects(false);
-        HttpResponse response = Unirest.get(MockServer.REDIRECT).asEmpty();
+        var response = Unirest.get(MockServer.REDIRECT).asEmpty();
 
         assertEquals(301, response.getStatus());
     }
@@ -63,7 +72,7 @@ class RedirectHandlingTest extends BddTest {
     @Test
     void canDisableRedirectsAsync() throws Exception {
         Unirest.config().followRedirects(false);
-        HttpResponse response = Unirest.get(MockServer.REDIRECT).asEmptyAsync().get();
+        var response = Unirest.get(MockServer.REDIRECT).asEmptyAsync().get();
 
         assertEquals(301, response.getStatus());
     }

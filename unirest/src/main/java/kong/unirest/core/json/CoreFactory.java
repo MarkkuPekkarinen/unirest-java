@@ -55,8 +55,9 @@ public class CoreFactory {
     );
 
     private static final List<String> KNOWN_IMPLEMENTATIONS = List.of(
-            "kong.unirest.jackson.JacksonEngine",
-            "kong.unirest.gson.GsonEngine"
+            "kong.unirest.modules.jackson.JacksonEngine",
+            "kong.unirest.modules.jackson2.JacksonEngine",
+            "kong.unirest.modules.gson.GsonEngine"
     );
 
     private static JsonEngine engine;

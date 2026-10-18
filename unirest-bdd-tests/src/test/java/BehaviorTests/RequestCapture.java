@@ -26,7 +26,6 @@
 package BehaviorTests;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.LinkedListMultimap;
@@ -37,12 +36,16 @@ import kong.unirest.core.*;
 import jakarta.servlet.MultipartConfigElement;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Part;
+import org.assertj.core.data.MapEntry;
+import org.assertj.guava.api.MultimapAssert;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -53,8 +56,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class RequestCapture {
     public String requestId = UUID.randomUUID().toString();
-    public ListMultimap<String, String> headers = LinkedListMultimap.create();
-    public List<FormPart> files = new ArrayList<>();
+    public HeaderAsserts headers = new HeaderAsserts();
+    public List<MultiPart> multiformparts = new ArrayList<>();
     public ArrayListMultimap<String, String> params = ArrayListMultimap.create();
     public String body;
     public String url;
@@ -76,7 +79,7 @@ public class RequestCapture {
         url = req.url();
         queryString = req.queryString();
         method = HttpMethod.valueOf(req.method().name());
-        writeHeaders(req);
+        headers = new HeaderAsserts(req);
         writeQuery(req);
         populateParams(req);
         cookies.putAll(req.cookieMap());
@@ -119,11 +122,7 @@ public class RequestCapture {
 
         try {
             for (Part p : req.req().getParts()) {
-                if (!Strings.isNullOrEmpty(p.getSubmittedFileName())) {
-                    buildFilePart(p);
-                } else {
-                    buildUrlEncodedParamPart(p);
-                }
+                buildMultiContentPart(p);
             }
         } catch (ServletException e) {
             this.body = req.body();
@@ -134,29 +133,28 @@ public class RequestCapture {
         }
     }
 
-    private void buildUrlEncodedParamPart(Part p) throws IOException {
-        java.util.Scanner s = new Scanner(p.getInputStream()).useDelimiter("\\A");
-        String value = s.hasNext() ? s.next() : "";
-        params.put(p.getName(), value);
-    }
-
-    public void buildFilePart(Part part) throws IOException {
-        FormPart file = new FormPart();
+    public void buildMultiContentPart(Part part) throws IOException {
+        MultiPart file = new MultiPart();
         file.fileName = part.getSubmittedFileName();
         file.type = part.getContentType();
-        file.inputName = part.getName();
+        file.name = part.getName();
         file.fileType = part.getContentType();
         file.size = part.getSize();
         file.body = toString(part.getInputStream());
         file.headers = extractHeaders(part);
+        if (Strings.isNullOrEmpty(part.getSubmittedFileName())) {
+            var s = new Scanner(part.getInputStream()).useDelimiter("\\A");
+            var value = s.hasNext() ? s.next() : "";
+            params.put(part.getName(), value);
+        }
 
-        files.add(file);
+        multiformparts.add(file);
     }
 
     private ListMultimap<String, String> extractHeaders(Part part) {
         ListMultimap<String, String> h = LinkedListMultimap.create();
-        for(String header : part.getHeaderNames()){
-            h.putAll(header, part.getHeaders(header));
+        for (String header : part.getHeaderNames()) {
+            h.putAll(header.toLowerCase(), part.getHeaders(header));
         }
         return h;
     }
@@ -166,30 +164,22 @@ public class RequestCapture {
     }
 
     public RequestCapture assertNoHeader(String s) {
-        assertFalse(headers.containsKey(s), "Should Have No Header " + s);
-        return this;
-    }
-
-    private RequestCapture writeHeaders(Context req) {
-        Collections.list(req.req().getHeaderNames())
-                .forEach(name -> Collections.list(req.req().getHeaders(name))
-                        .forEach(value -> headers.put(name, value)));
+        headers.assertNoHeader(s);
         return this;
     }
 
     public RequestCapture assertHeader(String key, String... value) {
-        assertThat(headers.asMap()).containsKey(key);
-        assertThat(headers.get(key)).contains(value);
+        headers.assertHeader(key, value);
         return this;
     }
 
     public RequestCapture assertParam(String key, String value) {
         assertTrue(params.containsKey(key), String.format("Expect param of '%s' but none was present", key));
-        assertTrue(params.get(key).contains(value), "Expected Query or Form value: " + value);
+        assertThat(params.get(key)).contains(value);
         return this;
     }
 
-    public FormPart getFile(String fileName) {
+    public MultiPart getFile(String fileName) {
         return getFileStream()
                 .filter(f -> Objects.equals(f.fileName, fileName))
                 .findFirst()
@@ -197,21 +187,21 @@ public class RequestCapture {
                         + "Found: " + getFileStream().map(f -> f.fileName).collect(Collectors.joining(" "))));
     }
 
-    private Stream<FormPart> getFileStream() {
-        return files.stream()
+    private Stream<MultiPart> getFileStream() {
+        return multiformparts.stream()
                 .filter(f -> f.isFile());
     }
 
-    public FormPart getFileByInput(String input) {
+    public MultiPart getFileByInput(String input) {
         return getFileStream()
-                .filter(f -> Objects.equals(f.inputName, input))
+                .filter(f -> Objects.equals(f.name, input))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("No File from form: " + input));
     }
 
-    public List<FormPart> getAllFilesByInput(String input) {
+    public List<MultiPart> getAllFilesByInput(String input) {
         return getFileStream()
-                .filter(f -> Objects.equals(f.inputName, input))
+                .filter(f -> Objects.equals(f.name, input))
                 .collect(Collectors.toList());
     }
 
@@ -221,10 +211,7 @@ public class RequestCapture {
     }
 
     public RequestCapture assertBasicAuth(String username, String password) {
-        String raw = headers.get("Authorization").get(0);
-        assertNotNull(raw, "Authorization Header Missing");
-        String credentials = raw.replace("Basic ","");
-        assertEquals(username + ":" + password, new String(Base64.getDecoder().decode(credentials)));
+        headers.assertBasicAuth(username, password);
         return this;
     }
 
@@ -249,7 +236,7 @@ public class RequestCapture {
     }
 
     public void assertCharset(Charset charset) {
-        assertTrue(contentType.endsWith(charset.toString()), "Expected Content Type With Charset: " + charset.toString());
+        assertTrue(contentType.endsWith(charset.toString()), "Expected Content Type With Charset: " + charset);
     }
 
     public RequestCapture assertJsonPatch(JsonPatchOperation op, String path, Object value) {
@@ -276,8 +263,8 @@ public class RequestCapture {
         return this;
     }
 
-    public RequestCapture assertHeaderSize(String foo, int size) {
-        assertEquals(size, headers.get(foo).size());
+    public RequestCapture assertHeaderSize(String name, int size) {
+        headers.assertHeaderSize(name, size);
         return this;
     }
 
@@ -290,22 +277,26 @@ public class RequestCapture {
         this.status = i;
     }
 
+    public RequestCapture assertContentType(ContentType content) {
+        return assertContentType(content.getMimeType());
+    }
+
     public RequestCapture assertContentType(String content) {
         return assertHeader("Content-Type", content);
     }
 
+    public RequestCapture assertContentType(String content, String paramKey, String paramValue) {
+        headers.assertHeaderWithParam("Content-Type", content, paramKey, paramValue);
+        return this;
+    }
+
     public RequestCapture assertMultiPartContentType() {
-        List<String> h = headers.get("Content-Type");
-        assertEquals(1, h.size(), "Expected exactly 1 Content-Type header");
-        List<String> parts = Splitter.on(";").trimResults().splitToList(h.get(0));
-        assertEquals("multipart/form-data", parts.get(0));
-        assertTrue(parts.get(1).startsWith("boundary="));
-        assertEquals("charset=UTF-8", parts.get(2));
+        headers.assertMultiPartContentType();
         return this;
     }
 
     public RequestCapture assertUrlEncodedContent() {
-        return assertContentType("application/x-www-form-urlencoded; charset=UTF-8");
+        return assertRawContentType("application/x-www-form-urlencoded; charset=utf-8");
     }
 
     public RequestCapture assertCookie(String name, String value) {
@@ -315,17 +306,43 @@ public class RequestCapture {
         return this;
     }
 
-    public void assertNoCookie(String name) {
+    public RequestCapture assertNoCookie(String name) {
         assertNull(cookies.get(name), "Cookie should not have been passed but it was! ");
+        return this;
     }
 
-    public static class FormPart {
-        public String contentType;
+    public RequestCapture assertRawContentType(String value) {
+        headers.assertRawValue("Content-Type", value);
+        return this;
+    }
+
+    public RequestCapture assertHeader(String name, Consumer<HeaderAsserts.HeaderValue> validator) {
+        validator.accept(headers.getFirst(name));
+        return this;
+    }
+
+    public RequestCapture assertBodyPart(String name, Consumer<MultiPart> validator) {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(validator);
+        validator.accept(
+                multiformparts.stream()
+                        .filter(f -> name.equalsIgnoreCase(f.name))
+                        .findFirst()
+                        .orElseThrow(() -> new AssertionError("No Form Body Part Found Named: " + name))
+        );
+        return this;
+    }
+
+    public RequestCapture assertAccepts(ContentType type) {
+        return assertHeader("Accept", type.toString());
+    }
+
+    public static class MultiPart {
         public ListMultimap<String, String> headers = LinkedListMultimap.create();
         public String content;
         public String fileName;
         public String type;
-        public String inputName;
+        public String name;
         public String body;
         public String fileType;
         public long size;
@@ -336,31 +353,52 @@ public class RequestCapture {
             return fileName != null;
         }
 
-        public FormPart assertBody(String content) {
+        public MultiPart assertBody(String content) {
             assertEquals(content, body);
             return this;
         }
 
-        public FormPart assertFileType(String type) {
+        public MultiPart assertFileType(String type) {
             assertEquals(type, this.fileType);
             return this;
         }
 
-        public FormPart assertFileType(ContentType imageJpeg) {
+        public MultiPart assertFileType(ContentType imageJpeg) {
             return assertFileType(imageJpeg.toString());
         }
 
-        public FormPart assertFileName(String s) {
+        public MultiPart assertFileName(String s) {
             assertEquals(s, fileName);
             return this;
         }
 
-        public void assertSize(long expected) {
+        public MultiPart assertSize(long expected) {
             assertEquals(expected, this.size);
+            return this;
         }
 
-        public void exists() {
+        public MultiPart exists() {
             assertTrue(this.size > 0);
+            return this;
+        }
+
+        public MultiPart assertContentType(String contentType) {
+            assertHeaders().contains(MapEntry.entry("content-type", contentType));
+            return this;
+        }
+
+        public MultiPart assertContentDisposition(String disposition) {
+            assertHeaders().contains(MapEntry.entry("content-disposition", disposition));
+            return this;
+        }
+
+        public MultiPart assertHeader(String name, String value) {
+            assertHeaders().contains(MapEntry.entry(name, value));
+            return this;
+        }
+
+        private MultimapAssert<String, String> assertHeaders() {
+            return TestUtil.assertMultiMap(headers);
         }
     }
 

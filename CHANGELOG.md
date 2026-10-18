@@ -1,3 +1,83 @@
+## 4.10.2
+* Encode URL-encoded form field names with the configured charset, matching form values. Callers that pre-encoded names to work around this defect should pass the original unencoded name instead.
+
+## 4.10.1
+* Add support for the new QUERY method in HTTP
+* Minor javadoc and error message fixes
+
+## 4.10.0
+* Issue #567 : Add support for additional headers added to multi-part form parts. This is supported though a new sub-builder for fields. This sub-builder will eventually take over for many of the complex overloads of ::field which will be dropped in Unirest 5.
+
+## 4.9.0
+* Issue #531 : Support chaining expectations in the mocking library. Users who had multiple matching expects for a route will now be expected to be performed in order.
+
+## 4.8.1
+* Dependency updates
+
+## 4.8.0
+* Changed default ordering of form fields to the order they were added from alphabetical. Added additional sort method in case anyone wants them sorted the old way.
+
+## 4.7.4
+* Re-Introduce a 2 Jackson 2 module available as unirest-modules-jackson-legacy. This will give people a better chance to migrate. This module will be dropped if/when Unirest goes to version 5. See the discussions for an apology. 
+
+## 4.7.0 
+* Bump Jackson module to Jackson 3. This also requires the Jackson module to be at Java 17. All other modules are still at 11
+  * Users who wish to continue to use Jackson 2 can use the unirest-modules-jackson-legacy module that was added just after this version (see 4.7.4).
+
+## 4.6.0
+* Add support for multiple proxies and authentication per host
+
+## 4.5.2
+* Dependency updates
+
+## 4.5.1
+* Add Config method for setting system property jdk.internal.httpclient.disableHostnameVerification. This will disable host name verification for ALL instances of Unirest or the Java client on the JVM
+
+## 4.5.0
+* Added support for Server Sent Events. See Documentation.
+
+## 4.4.11
+* Updated dependencies
+* versions 4.4.8 - 4.4.10 were lost to Maven Central authentication changes
+
+## 4.4.7
+* issue #542 should pass default response to dynamically created invocations
+
+## 4.4.5
+* Issue #536 UnirestInstance should implement AutoCloseable
+
+## 4.4.4
+* issue #528 reset content headers when multiPartContent is called
+
+## 4.4.0
+* Issue #526 split connection timeout from request timeout. The request no longer has a connection timeout setting, and instead has a request timeout setting as a replacement. Previously these two settings had been conflated. The overall config also has a default request timeout that will be applied to all requests if the request setting is not set. The default setting is null which indicates a infinite timeout. 
+
+## 4.3.2
+* Issue #523 when paging create a new copy of the request for each page rather than reusing the original
+* Issue #524 support the Partitioned flag on cookies for CHIPs (Cookies Having Independent Partitioned State) 
+* Make Path public. Because its handy
+
+## 4.3.1
+* Added convenience methods for using ContentType with accepts and contentType methods
+
+## 4.3.0
+The modules have been repackaged and put into new maven coordinates in order to avoid conflicts with the 3.x line of unirest.
+The mock module has had its maven artifact ID changed only.
+
+| Old Maven Artifact ID | New Maven Artifact ID   | Old Class Package    | New Class Package            |
+|----|-------------------------|----------------------|------------------------------|
+|unirest-object-mappers-gson | unirest-modules-gson    | kong.unirest.gson    | kong.unirest.modules.gson    |
+|unirest-objectmapper-jackson | unirest-modules-jackson | kong.unirest.jackson | kong.unirest.modules.jackson |
+|unirest-mocks | unirest-modules-mocks   | kong.unirest.core    | kong.unirest.core    |
+
+
+## 4.2.9
+* re-work request summary to be closer in reality to the actual request for multipart requests.
+
+## 4.2.8
+* populate the content type for non-binary multiparts
+* added method to accept a form part with a ContentType type in addition to string
+
 ## 4.2.7
 * Changes to the json CoreFactory to allow for multiple different strategies for finding the JsonEngine in the classpath.
 * Allow setting a custom JsonFactory directly
@@ -71,7 +151,7 @@
 * Apache Replaced by native Java HTTP Client
 * Modular Maven config with bom
 * Zero external runtime dependencies by default
-* You MUST include JSON support on your own ([see upgrade guide](UPGRADE_GUIDE.md))
+* You MUST include JSON support on your own ([see upgrade guide](mkdocs/docs/upgrade-guide))
 * New Maven coordinates
 * New packaging in order to not conflict with older versions
 
@@ -330,7 +410,7 @@
 * JsonNode now has a ```toPrettyString``` method for getting a formatted json string
 
 ## 3.0.00
-* Replace the dependency on org.json with a native kong.unirest library powered by gson that matches org.json interfaces. See the [Upgrade Guide](UPGRADE_GUIDE.md) for details.
+* Replace the dependency on org.json with a native kong.unirest library powered by gson that matches org.json interfaces. See the [Upgrade Guide](mkdocs/docs/upgrade-guide) for details.
 * Issue #299. Remove gzip content-encoding header after decompression on async client
 
 ## 2.4.01
@@ -450,7 +530,7 @@ Unirest.get("http://someplace")
 
 ## 2.0.04
 * Disable SSL validation with ```Unirest.config().verifySsl(false)```. PLEASE DO NOT DO THIS IN PRODUCTION
-* Disable Automatic retries with ```Unirest.config().automaticRetries(false)```
+* Disable Automatic retries with ```Unirest.config().ÏautomaticRetries(false)```
 
 ## 2.0.03
 * Make sure the GzipInputStream gets closed.

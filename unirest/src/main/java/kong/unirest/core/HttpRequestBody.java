@@ -43,6 +43,11 @@ class HttpRequestBody extends BaseRequest<HttpRequestWithBody> implements HttpRe
 		super(config, method, url);
 	}
 
+	public HttpRequestBody(HttpRequestBody baseRequest) {
+		super(baseRequest);
+		this.charSet = baseRequest.getCharset();
+	}
+
 	@Override
 	public MultipartBody field(String name, Collection<?> value) {
 		return new HttpRequestMultiPart(this).field(name, value);
@@ -51,6 +56,11 @@ class HttpRequestBody extends BaseRequest<HttpRequestWithBody> implements HttpRe
 	@Override
 	public MultipartBody field(String name, File file) {
 		return field(name, file, null);
+	}
+
+	@Override
+	public MultipartBody field(MultiPartBuilder builder) {
+		return new HttpRequestMultiPart(this).forceMultiPart(true).field(builder);
 	}
 
 	@Override

@@ -45,17 +45,9 @@ public interface MultipartBody extends HttpRequest<MultipartBody>, Body {
     /**
      * add a simple field with a name and value
      * @param name: the Name of the form field
-     * @param value: The string value for the field
-     * @param contentType: the content type of the value
-     * @return The same MultipartBody
-     */
-    MultipartBody field(String name, String value, String contentType);
-
-    /**
-     * add a simple field with a name and value
-     * @param name: the Name of the form field
      * @param values: A collection of values for the same name.
      * @return The same MultipartBody
+     *
      */
     MultipartBody field(String name, Collection<?> values);
 
@@ -68,12 +60,47 @@ public interface MultipartBody extends HttpRequest<MultipartBody>, Body {
     MultipartBody field(String name, File file);
 
     /**
+     * add a field using the MultiPartBuilder.
+     * This forces the request into a multipart request
+     * @param builder the builder
+     * @return the same MultipartBody
+     */
+    MultipartBody field(MultiPartBuilder builder);
+
+    /**
+     * add a simple field with a name and value
+     * @param name: the Name of the form field
+     * @param value: The string value for the field
+     * @param contentType: the content type of the value
+     * @return The same MultipartBody
+     * @deprecated will be removed in Unirest 5.
+     *              advanced multipart fields will be supported though field(MultiPartBuilder builder)
+     */
+    @Deprecated
+    MultipartBody field(String name, String value, String contentType);
+
+    /**
+     * add a simple field with a name and value
+     * @param name: the Name of the form field
+     * @param value: The string value for the field
+     * @param contentType: the content type of the value
+     * @return The same MultipartBody
+     * @deprecated will be removed in Unirest 5.
+     *              advanced multipart fields will be supported though field(MultiPartBuilder builder)
+     */
+    @Deprecated
+    MultipartBody field(String name, String value, ContentType contentType);
+
+    /**
      * add a simple field with a name and value
      * @param name: the Name of the form field
      * @param file: A File object.
      * @param contentType: the content mime-type of the file
      * @return The same MultipartBody
+     * @deprecated will be removed in Unirest 5.
+     *              advanced multipart fields will be supported though field(MultiPartBuilder builder)
      */
+    @Deprecated
     MultipartBody field(String name, File file, String contentType);
 
     /**
@@ -82,7 +109,10 @@ public interface MultipartBody extends HttpRequest<MultipartBody>, Body {
      * @param value: A input stream
      * @param contentType: the content mime-type of the file
      * @return The same MultipartBody
+     * @deprecated will be removed in Unirest 5.
+     *              advanced multipart fields will be supported though field(MultiPartBuilder builder)
      */
+    @Deprecated
     MultipartBody field(String name, InputStream value, ContentType contentType);
 
     /**
@@ -92,7 +122,10 @@ public interface MultipartBody extends HttpRequest<MultipartBody>, Body {
      * @param contentType: the content mime-type of the file
      * @param fileName: the name of the file which will be included in the file part header
      * @return The same MultipartBody
+     * @deprecated will be removed in Unirest 5.
+     *              advanced multipart fields will be supported though field(MultiPartBuilder builder)
      */
+    @Deprecated
     MultipartBody field(String name, InputStream stream, ContentType contentType, String fileName);
 
     /**
@@ -102,7 +135,10 @@ public interface MultipartBody extends HttpRequest<MultipartBody>, Body {
      * @param contentType: the content mime-type of the file
      * @param fileName: the name of the file which will be included in the file part header
      * @return The same MultipartBody
+     * @deprecated will be removed in Unirest 5.
+     *              advanced multipart fields will be supported though field(MultiPartBuilder builder)
      */
+    @Deprecated
     MultipartBody field(String name, byte[] bytes, ContentType contentType, String fileName);
 
     /**
@@ -111,7 +147,10 @@ public interface MultipartBody extends HttpRequest<MultipartBody>, Body {
      * @param stream: The raw bytes for the file
      * @param fileName: the name of the file which will be included in the file part header
      * @return The same MultipartBody
+     * @deprecated will be removed in Unirest 5.
+     *              advanced multipart fields will be supported though field(MultiPartBuilder builder)
      */
+    @Deprecated
     MultipartBody field(String name, InputStream stream, String fileName);
 
     /**
@@ -120,8 +159,17 @@ public interface MultipartBody extends HttpRequest<MultipartBody>, Body {
      * @param bytes: The raw bytes for the file
      * @param fileName: the name of the file which will be included in the file part header
      * @return The same MultipartBody
+     * @deprecated will be removed in Unirest 5.
+     *              advanced multipart fields will be supported though field(MultiPartBuilder builder)
      */
+    @Deprecated
     MultipartBody field(String name, byte[] bytes, String fileName);
+
+    /**
+     * sort fields on name, in alphabetical order
+     * @return The same MultipartBody
+     */
+    MultipartBody sortFields();
 
     /**
      * Set the encoding of the request body
@@ -151,4 +199,12 @@ public interface MultipartBody extends HttpRequest<MultipartBody>, Body {
      * @return The same MultipartBody
      * */
     MultipartBody uploadMonitor(ProgressMonitor monitor);
+
+    /**
+     * Sets the value to use as the boundary identifier.
+     * see <a href="https://datatracker.ietf.org/doc/html/rfc2046">rfc2046</a>
+     * @param boundaryIdentifier the value
+     * @return The same MultipartBody
+     */
+    MultipartBody boundary(String boundaryIdentifier);
 }

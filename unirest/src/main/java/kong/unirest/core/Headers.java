@@ -31,6 +31,9 @@ import java.util.function.Supplier;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
+/**
+ * Represents a collection of headers
+ */
 public class Headers {
 
     private static final long serialVersionUID = 71310341388734766L;
@@ -73,7 +76,11 @@ public class Headers {
         add(name, value);
     }
 
-    private void remove(String name) {
+    /**
+     * Remove a header by name
+     * @param name the name of the header
+     */
+    public void remove(String name) {
         headers.removeIf(h -> isName(h, name));
     }
 
@@ -99,10 +106,12 @@ public class Headers {
 
     /**
      * Add a bunch of headers at once
-     * @param header a header
+     * @param other a header
      */
-    public void putAll(Headers header) {
-        this.headers.addAll(header.headers);
+    public void putAll(Headers other) {
+        if(other != null) {
+            this.headers.addAll(other.headers);
+        }
     }
 
     /**
@@ -143,6 +152,22 @@ public class Headers {
         return new ArrayList<>(this.headers);
     }
 
+    /**
+     * Add a Cookie header
+     * @param cookie the cookie
+     */
+    public void cookie(Cookie cookie) {
+        headers.add(new Entry("cookie", cookie.toString()));
+    }
+
+    /**
+     * sets a collection of cookies
+     * @param cookies some cookies
+     */
+    public void cookie(Collection<Cookie> cookies) {
+        cookies.forEach(this::cookie);
+    }
+
     private boolean isName(Header h, String name) {
         return Util.nullToEmpty(name).equalsIgnoreCase(h.getName());
     }
@@ -166,14 +191,6 @@ public class Headers {
         return sb.toString();
     }
 
-    public void cookie(Cookie cookie) {
-        headers.add(new Entry("cookie", cookie.toString()));
-    }
-
-    public void cookie(Collection<Cookie> cookies) {
-        cookies.forEach(this::cookie);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) { return true;}
@@ -187,14 +204,30 @@ public class Headers {
         return Objects.hash(headers);
     }
 
+    /**
+     * creates a basic auth header from a username and password.
+     * The creds will be the Base64 encoded value of {username}:{password} along with the 'Basic' schema
+     * For example given a creds of "username" and "password" you would get
+     * eg: Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+     * @param username the username
+     * @param password the password
+     */
     public void setBasicAuth(String username, String password) {
         this.replace("Authorization", Util.toBasicAuthValue(username, password));
     }
 
+    /**
+     * sets the Accept header
+     * @param value the value for accept
+     */
     public void accepts(String value) {
         add(HeaderNames.ACCEPT, value);
     }
 
+    /**
+     * Sets headers based on a map of key-value pairs
+     * @param headerMap I'm the MAP
+     */
     public void add(Map<String, String> headerMap) {
         if (headerMap != null) {
             for (Map.Entry<String, String> entry : headerMap.entrySet()) {

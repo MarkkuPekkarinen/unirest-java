@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * A request Builder for POST and PUT operations with a body.
@@ -84,6 +85,14 @@ public interface HttpRequestWithBody extends HttpRequest<HttpRequestWithBody> {
      * @return this request builder
      */
     MultipartBody field(String name, File file);
+
+
+    /**
+     * Add a multipart field with a FieldBuilder which supports many different options
+     * @param builder a FieldBuilder
+     * @return this request builder
+     */
+    MultipartBody field(MultiPartBuilder builder);
 
     /**
      * Sets a File on the body with a specified content-type.
@@ -182,6 +191,15 @@ public interface HttpRequestWithBody extends HttpRequest<HttpRequestWithBody> {
      * @return the Charset
      */
     Charset getCharset();
+
+    /**
+     * @param type The content mime type
+     * @return this request builder
+     */
+    default HttpRequestWithBody contentType(ContentType type){
+        Objects.requireNonNull(type);
+        return contentType(type.toString()).charset(type.getCharset());
+    }
 
     /**
      * @param type The content mime type

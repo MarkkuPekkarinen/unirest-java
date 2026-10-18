@@ -26,6 +26,7 @@
 package kong.unirest.core.java;
 
 
+import kong.unirest.core.Headers;
 import kong.unirest.core.ProgressMonitor;
 import kong.unirest.core.UnirestException;
 
@@ -38,7 +39,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.Flow.Subscriber;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -56,12 +56,13 @@ final class MultipartBodyPublisher implements BodyPublisher {
 
     private final List<Part> parts;
     private final ProgressMonitor monitor;
-    private final String boundary = UUID.randomUUID().toString();
+    private final String boundary;
     private long contentLength;
 
-    private MultipartBodyPublisher(List<Part> parts, ProgressMonitor monitor) {
+    private MultipartBodyPublisher(List<Part> parts, ProgressMonitor monitor, String boundary) {
         this.parts = parts;
         this.monitor = monitor;
+        this.boundary = boundary;
         contentLength = UNINITIALIZED_LENGTH;
     }
 
@@ -112,10 +113,6 @@ final class MultipartBodyPublisher implements BodyPublisher {
 
     static void appendPartHeaders(StringBuilder target, Part part) {
         part.headers().all().forEach(h -> appendHeader(target, h.getName(), h.getValue()));
-        BodyPublisher publisher = part.bodyPublisher();
-        if (publisher instanceof PartPublisher) {
-            appendHeader(target, "Content-Type", ((PartPublisher) publisher).mediaType().toString());
-        }
     }
 
     private static void appendHeader(StringBuilder target, String name, String value) {
@@ -123,28 +120,31 @@ final class MultipartBodyPublisher implements BodyPublisher {
     }
 
     /** Returns a new {@code MultipartBodyPublisher.Builder}. */
-    static MultipartBodyPublisher.Builder newBuilder() {
-        return new MultipartBodyPublisher.Builder();
+    static MultipartBodyPublisher.Builder newBuilder(String boundary) {
+        return new MultipartBodyPublisher.Builder(boundary);
     }
 
     static final class Builder {
 
         private final List<Part> parts;
+        private final String boundary;
 
-        Builder() {
+        Builder(String boundary) {
+            this.boundary = boundary;
             parts = new ArrayList<>();
         }
 
         /**
          * Adds a form field with the given name and body.
          *
-         * @param name the field's name
+         * @param name          the field's name
          * @param bodyPublisher the field's body publisher
+         * @param contentType   the content type for the part
          */
-        MultipartBodyPublisher.Builder formPart(String name, BodyPublisher bodyPublisher) {
+        MultipartBodyPublisher.Builder formPart(String name, BodyPublisher bodyPublisher, String contentType, Headers additionalHeaders) {
             requireNonNull(name, "name");
             requireNonNull(bodyPublisher, "body");
-            parts.add(new Part(name, null, bodyPublisher));
+            parts.add(new Part(name, null, bodyPublisher, contentType, additionalHeaders));
             return this;
         }
 
@@ -155,11 +155,11 @@ final class MultipartBodyPublisher implements BodyPublisher {
          * @param filename the field's filename
          * @param body the field's body publisher
          */
-        MultipartBodyPublisher.Builder formPart(String name, String filename, BodyPublisher body) {
+        MultipartBodyPublisher.Builder formPart(String name, String filename, BodyPublisher body, String contentType, Headers additionalHeaders) {
             requireNonNull(name, "name");
             requireNonNull(filename, "filename");
             requireNonNull(body, "body");
-            parts.add(new Part(name, filename, body));
+            parts.add(new Part(name, filename, body, contentType, additionalHeaders));
             return this;
         }
 
@@ -170,8 +170,8 @@ final class MultipartBodyPublisher implements BodyPublisher {
          * @param name the field's name
          * @param value an object whose string representation is used as the value
          */
-        MultipartBodyPublisher.Builder textPart(String name, Object value) {
-            return textPart(name, value, UTF_8);
+        MultipartBodyPublisher.Builder textPart(String name, Object value, String contentType, Headers additionalHeaders) {
+            return textPart(name, value, UTF_8, contentType, additionalHeaders);
         }
 
         /**
@@ -182,11 +182,11 @@ final class MultipartBodyPublisher implements BodyPublisher {
          * @param value an object whose string representation is used as the value
          * @param charset the charset for encoding the field's body
          */
-        MultipartBodyPublisher.Builder textPart(String name, Object value, Charset charset) {
+        MultipartBodyPublisher.Builder textPart(String name, Object value, Charset charset, String contentType, Headers additionalHeaders) {
             requireNonNull(name, "name");
             requireNonNull(value, "value");
             requireNonNull(charset, "charset");
-            return formPart(name, BodyPublishers.ofString(value.toString(), charset));
+            return formPart(name, BodyPublishers.ofString(value.toString(), charset), contentType, additionalHeaders);
         }
 
 
@@ -200,7 +200,7 @@ final class MultipartBodyPublisher implements BodyPublisher {
          * @param mediaType the part's media type
          * @throws FileNotFoundException if a file with the given path cannot be found
          */
-        MultipartBodyPublisher.Builder filePart(String name, Path file, String mediaType)
+        MultipartBodyPublisher.Builder filePart(String name, Path file, String mediaType, Headers additionalHeaders)
                 throws FileNotFoundException {
             requireNonNull(name, "name");
             requireNonNull(file, "file");
@@ -209,7 +209,7 @@ final class MultipartBodyPublisher implements BodyPublisher {
             String filename = filenameComponent != null ? filenameComponent.toString() : "";
             PartPublisher publisher =
                     new PartPublisher(BodyPublishers.ofFile(file), mediaType);
-            return formPart(name, filename, publisher);
+            return formPart(name, filename, publisher, mediaType, additionalHeaders);
         }
 
         /**
@@ -223,7 +223,7 @@ final class MultipartBodyPublisher implements BodyPublisher {
             if (!!addedParts.isEmpty()) {
                 throw new UnirestException("at least one part should be added");
             }
-            return new MultipartBodyPublisher(addedParts, monitor);
+            return new MultipartBodyPublisher(addedParts, monitor, boundary);
         }
     }
 }

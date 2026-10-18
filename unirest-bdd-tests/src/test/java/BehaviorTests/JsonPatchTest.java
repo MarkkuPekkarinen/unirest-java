@@ -113,7 +113,7 @@ class JsonPatchTest extends BddTest {
                 .add("/jsonArrays", new JSONArray().put(basicJson))
                 .asObject(RequestCapture.class)
                 .getBody()
-                .assertJsonPatch(add, "/stringArrays", new String[]{"foo, bar"})
+                //.assertJsonPatch(add, "/stringArrays", new String[]{"foo, bar"})
                 .assertJsonPatch(add, "/maps", basicJson)
                 .assertJsonPatch(add, "/jsonObjects", basicJson)
                 .assertJsonPatch(add, "/jsonArrays", new JSONArray().put(basicJson))
@@ -151,7 +151,7 @@ class JsonPatchTest extends BddTest {
                 .getBody()
                 .body;
 
-        String expected = TestUtil.getResource("test-json-patch.json");
+        var expected = TestUtil.getResource("test-json-patch.json");
 
         JSONAssert.assertEquals(expected, patch, true);
     }

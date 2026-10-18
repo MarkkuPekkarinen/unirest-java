@@ -27,12 +27,15 @@ package kong.unirest.core.java;
 
 import kong.unirest.core.*;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static java.net.http.HttpRequest.newBuilder;
 import static java.net.http.HttpResponse.BodySubscribers.ofInputStream;
@@ -86,7 +89,11 @@ public class JavaClient implements Client {
                     .method(
                             request.getHttpMethod().name(),
                             new BodyBuilder(request).getBody()
-                    ).timeout(Duration.ofMillis(request.getConnectTimeout()));
+                    );
+
+            if(!Objects.isNull(request.getRequestTimeout())){
+                jreq.timeout(Duration.ofMillis(request.getRequestTimeout()));
+            }
             
             setHeaders(request, jreq);
 
@@ -106,7 +113,7 @@ public class JavaClient implements Client {
             var value = "text/plain";
             var charset = request.getBody().get().getCharset();
             if (charset != null) {
-                value = value + "; charset=" + charset.toString();
+                value = value + "; charset=" + charset;
             }
             jreq.header(CONTENT_TYPE, value);
         }
@@ -153,6 +160,31 @@ public class JavaClient implements Client {
         var b = client.newWebSocketBuilder();
         request.getHeaders().all().forEach(h -> b.header(h.getName(), h.getValue()));
         return new WebSocketResponse(b.buildAsync(URI.create(request.getUrl()), listener), listener);
+    }
+
+    @Override
+    public CompletableFuture<Void> sse(SseRequest request, SseHandler handler) {
+        var r = SseRequestBuilder.getHttpRequest(request);
+
+        return client.sendAsync(r, java.net.http.HttpResponse.BodyHandlers.ofLines())
+                .thenAccept(new SseResponseHandler(config, handler))
+                .exceptionally(ex -> {
+                    System.err.println("Error: " + ex.getMessage());
+                    return null;
+                });
+    }
+
+    @Override
+    public Stream<Event> sse(SseRequest request) {
+
+        try {
+            var r = SseRequestBuilder.getHttpRequest(request);
+            var stream = client.send(r, java.net.http.HttpResponse.BodyHandlers.ofLines());
+            var handler = new SseResponseHandler(config, event -> {});
+            return handler.map(stream.body());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected <T> HttpResponse<T> transformBody(Function<RawResponse, HttpResponse<T>> transformer, RawResponse rr) {

@@ -84,7 +84,7 @@ class HeaderTest extends BddTest {
         Unirest.config().setDefaultHeader("X-Custom-Header", "hello");
         Unirest.config().setDefaultHeader("user-agent", "foobar");
 
-        HttpResponse<JsonNode> jsonResponse = Unirest.get(MockServer.GET).asJson();
+        var jsonResponse = Unirest.get(MockServer.GET).asJson();
 
         parse(jsonResponse)
                 .assertHeader("X-Custom-Header", "hello")
@@ -104,7 +104,7 @@ class HeaderTest extends BddTest {
 
     @Test
     void testCaseInsensitiveHeaders() {
-        GetRequest request = Unirest.get(MockServer.GET)
+        var request = Unirest.get(MockServer.GET)
                 .header("Name", "Marco");
 
         assertEquals(1, request.getHeaders().size());
@@ -256,7 +256,7 @@ class HeaderTest extends BddTest {
                 .getBody()
                 .assertBasicAuth("user1","pass1");
 
-        JsonNode bin = Unirest.post("http://httpbin.org/post")
+        var bin = Unirest.post("http://httpbin.org/post")
                 .basicAuth("user2", "pass2")
                 .asJson()
                 .getBody();
@@ -393,7 +393,7 @@ class HeaderTest extends BddTest {
                 .asObject(RequestCapture.class)
                 .getBody()
                 .assertHeaderSize("Content-Type", 1)
-                .assertContentType("application/x-www-form-urlencoded; charset=UTF-8");
+                .assertRawContentType("application/x-www-form-urlencoded; charset=utf-8");
     }
 
     @Test
@@ -428,6 +428,17 @@ class HeaderTest extends BddTest {
         assertContains(headers, "foo", "bar");
         assertContains(headers, "baz", "qux");
         assertContains(headers, "beatles", "ringo");
+    }
+
+    @Test
+    void passInMediaTypeAsAcceptsAndContentType() {
+        Unirest.post(MockServer.POST)
+                .accept(ContentType.IMAGE_JPEG)
+                .contentType(ContentType.APPLICATION_JSON)
+                .asObject(RequestCapture.class)
+                .getBody()
+                .assertAccepts(ContentType.IMAGE_JPEG)
+                .assertContentType(ContentType.APPLICATION_JSON);
     }
 
     private void assertContains(Collection<Header> headers, String key, String value) {

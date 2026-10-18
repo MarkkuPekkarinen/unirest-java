@@ -33,18 +33,46 @@ import kong.unirest.core.UnirestException;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.net.http.HttpConnectTimeoutException;
+import java.net.http.HttpTimeoutException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled
+
 class TimeoutTest extends BddTest {
 
     @Test
+    void requestTmeouts() {
+        // prime the server
+        Unirest.get(MockServer.GET).asEmpty();
+
+        var ex = assertThrows(UnirestException.class, () -> {
+            Unirest.get(MockServer.TIMEOUT)
+                    .requestTimeout(5)
+                    .asString();
+        });
+        assertEquals(HttpTimeoutException.class, ex.getCause().getClass());
+    }
+
+    @Test
+    void requestTmeoutsViaGlobalConfig() {
+        // prime the server
+        Unirest.get(MockServer.GET).asEmpty();
+
+        Unirest.config().requestTimeout(5);
+
+        var ex = assertThrows(UnirestException.class, () -> {
+            Unirest.get(MockServer.TIMEOUT)
+                    .asString();
+        });
+        assertEquals(HttpTimeoutException.class, ex.getCause().getClass());
+    }
+
+    @Test @Disabled
     void testSetTimeouts() {
         String address = MockServer.GET;
         long start = System.currentTimeMillis();

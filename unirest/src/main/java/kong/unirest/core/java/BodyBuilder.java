@@ -35,11 +35,12 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.net.http.HttpRequest;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 class BodyBuilder {
-    public static final Charset ASCII = Charset.forName("US-ASCII");
+    public static final Charset ASCII = StandardCharsets.US_ASCII;
     private final kong.unirest.core.HttpRequest request;
 
     BodyBuilder(kong.unirest.core.HttpRequest request) {
@@ -74,7 +75,7 @@ class BodyBuilder {
                 );
             }
 
-            MultipartBodyPublisher.Builder builder = MultipartBodyPublisher.newBuilder();
+            var builder = MultipartBodyPublisher.newBuilder(o.getBoundary());
             o.multiParts().forEach(part -> {
                 setMultiPart(o, builder, part);
             });
@@ -114,7 +115,7 @@ class BodyBuilder {
     private String toPair(ParamPart p, Body o) {
         try {
             String encoding = o.getCharset() == null ? "UTF-8" : o.getCharset().toString();
-            return String.format("%s=%s", p.getName(), URLEncoder.encode(p.getValue(), encoding));
+            return String.format("%s=%s", URLEncoder.encode(p.getName(), encoding), URLEncoder.encode(p.getValue(), encoding));
         } catch (UnsupportedEncodingException e) {
             throw new UnirestException(e);
         }
@@ -122,31 +123,33 @@ class BodyBuilder {
 
 
     private void setMultiPart(Body o, MultipartBodyPublisher.Builder builder, BodyPart part) {
+        String contentType = part.getContentType();
         if (part.isFile()) {
             if (part instanceof FilePart) {
                 try {
                     builder.filePart(part.getName(),
                             ((File) part.getValue()).toPath(),
-                            part.getContentType());
+                            contentType,
+                            part.getHeaders());
                 } catch (FileNotFoundException e) {
                     throw new UnirestException(e);
                 }
             } else if (part instanceof InputStreamPart) {
                 if (part.getFileName() != null) {
                     builder.formPart(part.getName(), standardizeName(part, o.getMode()),
-                            new PartPublisher(HttpRequest.BodyPublishers.ofInputStream(() -> (InputStream) part.getValue()), part.getContentType()));
+                            new PartPublisher(HttpRequest.BodyPublishers.ofInputStream(() -> (InputStream) part.getValue()), contentType), contentType, part.getHeaders());
                 } else {
                     builder.formPart(part.getName(),
-                            new PartPublisher(HttpRequest.BodyPublishers.ofInputStream(() -> (InputStream) part.getValue()), part.getContentType()));
+                            new PartPublisher(HttpRequest.BodyPublishers.ofInputStream(() -> (InputStream) part.getValue()), contentType), contentType, part.getHeaders());
                 }
 
             } else if (part instanceof ByteArrayPart) {
                 builder.formPart(part.getName(),
                         standardizeName(part, o.getMode()),
-                        new PartPublisher(HttpRequest.BodyPublishers.ofByteArray((byte[]) part.getValue()), part.getContentType()));
+                        new PartPublisher(HttpRequest.BodyPublishers.ofByteArray((byte[]) part.getValue()), contentType), contentType, part.getHeaders());
             }
         } else {
-            builder.textPart(part.getName(), String.valueOf(part.getValue()));
+            builder.textPart(part.getName(), String.valueOf(part.getValue()), contentType, part.getHeaders());
         }
     }
 
@@ -180,7 +183,7 @@ class BodyBuilder {
     private HttpRequest.BodyPublisher createInputStreamBody(Body b, BodyPart bodyPart) {
         if(b.getMonitor() != null){
             return HttpRequest.BodyPublishers.ofInputStream(
-                    () -> new MonitoringInputStream((InputStream) bodyPart.getValue(), b.getMonitor()));
+                    () -> new MonitorWrapper((InputStream) bodyPart.getValue(), b.getMonitor()));
         }
         return HttpRequest.BodyPublishers.ofInputStream(
                 () -> (InputStream) bodyPart.getValue());

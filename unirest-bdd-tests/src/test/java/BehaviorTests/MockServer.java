@@ -29,14 +29,13 @@ package BehaviorTests;
 import com.google.common.base.Strings;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-
+import io.javalin.http.Cookie;
 import io.javalin.http.HttpStatus;
 import io.javalin.websocket.WsConfig;
-import org.apache.commons.io.IOUtils;
-import org.eclipse.jetty.util.UrlEncoded;
-
 import jakarta.servlet.ServletOutputStream;
-import io.javalin.http.Cookie;
+import org.eclipse.jetty.util.UrlEncoded;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,7 +43,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import java.util.function.Consumer;
 import java.util.zip.GZIPOutputStream;
 
@@ -52,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 public class MockServer {
+
 
     public static int timesCalled;
     private static int pages = 1;
@@ -67,6 +66,7 @@ public class MockServer {
     public static final int PORT = 4567;
     public static final String HOST = "http://localhost:" + PORT;
     public static final String WEBSOCKET = "ws://localhost:" + PORT + "/websocket";
+    public static final String SSE =  HOST + "/sse";
     public static final String WINDOWS_LATIN_1_FILE = HOST + "/public/data/cp1250.txt";
     public static final String REDIRECT = HOST + "/redirect";
     public static final String JAVALIN = HOST + "/sparkle/{spark}/yippy";
@@ -76,6 +76,7 @@ public class MockServer {
     public static final String POST = HOST + "/post";
     public static final String GET = HOST + "/get";
     public static final String ERROR_RESPONSE = HOST + "/error";
+    public static final String QUERY = HOST + "/query";
     public static final String DELETE = HOST + "/delete";
     public static final String GZIP = HOST + "/gzip";
     public static final String EMPTY_GZIP = HOST + "/empty-gzip";
@@ -86,8 +87,11 @@ public class MockServer {
     public static final String CHEESE = HOST + "/cheese";
     public static final String ALTGET = "http://127.0.0.1:" + PORT + "/get";
     public static final String ECHO_RAW = HOST + "/raw";
+    public static final String TIMEOUT = HOST + "/timeout";
+    public static final String BASICAUTH = HOST + "/basic";
     private static Javalin app;
     private static int errorCode = 400;
+    private static RequestCapture lastRequest;
 
 
     public static void setJsonAsResponse(Object o) {
@@ -104,43 +108,73 @@ public class MockServer {
         WebSocketHandler.reset();
         retryTimes = 0;
         errorCode = 400;
+        lastRequest = null;
     }
 
     static {
         app = Javalin.create(c -> {
             c.staticFiles.add("public/");
-
+            c.routes.before(ctx -> {
+                timesCalled++;
+                lastRequest = new RequestCapture(ctx);
+            });
+            c.routes.before("/basic", ctx -> {
+                if (ctx.header("Authorization") == null) {
+                    ctx.header("WWW-Authenticate", "Basic realm=\"User Visible Realm\", charset=\"UTF-8\"");
+                    ctx.status(HttpStatus.UNAUTHORIZED);
+                }
+            });
+            c.routes.ws("/websocket", ws);
+            c.routes.sse("/sse", new TestSSEConsumer());
+            c.routes.delete("/delete", MockServer::jsonResponse);
+            c.routes.get("/sparkle/{spark}/yippy", MockServer::sparkle);
+            c.routes.post("/post", MockServer::jsonResponse);
+            c.routes.get("/get", MockServer::jsonResponse);
+            c.routes.query("/query", MockServer::jsonResponse);
+            c.routes.get("/gzip", MockServer::gzipResponse);
+            c.routes.post("/empty-gzip", MockServer::emptyGzipResponse);
+            c.routes.get("/redirect", MockServer::redirect);
+            c.routes.post("/redirect", MockServer::redirect);
+            c.routes.patch("/patch", MockServer::jsonResponse);
+            c.routes.get("/invalid", MockServer::inValid);
+            c.routes.options("/get", MockServer::jsonResponse);
+            c.routes.get("/nobody", MockServer::nobody);
+            c.routes.head("/get", MockServer::jsonResponse);
+            c.routes.put("/post", MockServer::jsonResponse);
+            c.routes.get("/get/{params}/passed", MockServer::jsonResponse);
+            c.routes.get("/get/{params}/passed/{another}", MockServer::jsonResponse);
+            c.routes.get("/proxy", MockServer::proxiedResponse);
+            c.routes.get("/binary", MockServer::file);
+            c.routes.get("/paged", MockServer::paged);
+            c.routes.post("/paged", MockServer::paged);
+            c.routes.post("/raw", MockServer::echo);
+            c.routes.get("/error", MockServer::error);
+            c.routes.get("/hello", MockServer::helloWOrld);
+            c.routes.get("/timeout", MockServer::timeout);
+            c.routes.get("/basic", MockServer::basic);
+            c.routes.error(404, MockServer::notFound);
         }).start(PORT);
-        app.error(404, MockServer::notFound);
-        app.before(c -> timesCalled++);
-        app.ws("/websocket", ws);
-        app.delete("/delete", MockServer::jsonResponse);
-        app.get("/sparkle/{spark}/yippy", MockServer::sparkle);
-        app.post("/post", MockServer::jsonResponse);
-        app.get("/get", MockServer::jsonResponse);
-        app.get("/gzip", MockServer::gzipResponse);
-        app.post("/empty-gzip", MockServer::emptyGzipResponse);
-        app.get("/redirect", MockServer::redirect);
-        app.patch("/patch", MockServer::jsonResponse);
-        app.get("/invalid", MockServer::inValid);
-        app.options("/get", MockServer::jsonResponse);
-        app.get("/nobody", MockServer::nobody);
-        app.head("/get", MockServer::jsonResponse);
-        app.put("/post", MockServer::jsonResponse);
-        app.get("/get/{params}/passed", MockServer::jsonResponse);
-        app.get("/get/{params}/passed/{another}", MockServer::jsonResponse);
-        app.get("/proxy", MockServer::proxiedResponse);
-        app.get("/binary", MockServer::file);
-        app.get("/paged", MockServer::paged);
-        app.post("/raw", MockServer::echo);
-        app.get("/error", MockServer::error);
-        app.get("/hello", MockServer::helloWOrld);
         Runtime.getRuntime().addShutdownHook(new Thread(app::stop));
         try {
             new CountDownLatch(1).await(2, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    private static void basic(@NotNull Context context) {
+        if (!(context.status().getCode() == 401)) {
+            jsonResponse(context);
+        }
+    }
+
+    private static void timeout(Context context) {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+
+        }
+        context.result("Hello World");
     }
 
 
@@ -204,7 +238,7 @@ public class MockServer {
         context.status(200);
         final ServletOutputStream out = context.res().getOutputStream();
         final FileInputStream in = new FileInputStream(f);
-        IOUtils.copy(in, out);
+        in.transferTo(out);
         out.close();
         in.close();
         return null;
@@ -215,7 +249,7 @@ public class MockServer {
     }
 
     private static void redirect(Context request) {
-        request.redirect("/get", HttpStatus.MOVED_PERMANENTLY);
+        request.redirect(GET, HttpStatus.MOVED_PERMANENTLY);
     }
 
     private static void inValid(Context request) {
@@ -258,6 +292,8 @@ public class MockServer {
     private static void jsonResponse(Context c){
         jsonResponse(c, false);
     }
+
+
     private static void jsonResponse(Context c, Boolean compress) {
         if(retryTimes > 0){
             if(retrySeconds != null) {
@@ -332,6 +368,10 @@ public class MockServer {
         responseHeaders.clear();
     }
 
+    public static RequestCapture lastRequest() {
+        return lastRequest;
+    }
+
     public static class WebSocketHandler implements Consumer<WsConfig> {
 
         private static String onOpenMessage = "Open";
@@ -376,5 +416,35 @@ public class MockServer {
 
     public static void expectErrorCode(int i) {
         errorCode = i;
+    }
+
+    public static final class Sse {
+        public static void sendComment(String comment) {
+            TestSSEConsumer.sendComment(comment);
+        }
+
+        public static void sendEvent(String content) {
+            TestSSEConsumer.sendEvent(content);
+        }
+
+        public static void sendEvent(String id, String event, String content) {
+           TestSSEConsumer.sendEvent(id, event, content);
+        }
+
+        public static void sendEvent(String event, String content) {
+            TestSSEConsumer.sendEvent(event, content);
+        }
+
+        public static void queueEvent(String id, String event, String content) {
+            TestSSEConsumer.queueEvent(id, event, content);
+        }
+
+        public static RequestCapture lastRequest() {
+            return TestSSEConsumer.getLastRequest();
+        }
+
+        public static void keepAlive(boolean value) {
+             TestSSEConsumer.keepAlive(value);
+        }
     }
 }

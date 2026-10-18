@@ -68,7 +68,7 @@ class VerbTest extends BddTest {
 
     @Test
     void head() {
-        HttpResponse response = Unirest.head(MockServer.GET).asEmpty();
+        var response = Unirest.head(MockServer.GET).asEmpty();
 
         assertEquals(200, response.getStatus());
         assertEquals("text/plain;charset=utf-8", response.getHeaders().getFirst("Content-Type"));
@@ -87,7 +87,7 @@ class VerbTest extends BddTest {
         Unirest.request("CHEESE", MockServer.CHEESE)
                 .asObject(RequestCapture.class)
                 .getBody()
-                .assertMethod(HttpMethod.valueOf("INVALID"))
+                .assertMethod(HttpMethod.valueOf("CHEESE"))
                 .assertBody("");
     }
 

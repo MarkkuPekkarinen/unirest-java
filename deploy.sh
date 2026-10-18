@@ -25,6 +25,14 @@
 #
 
 
-mvn clean verify
-mvn release:prepare -DskipTests
-mvn release:perform -DskipTests
+mvn clean verify -P ossrh
+mvn release:prepare -DskipTests -P ossrh
+mvn release:perform -DskipTests -P ossrh
+
+# Get the latest tag created by maven-release-plugin
+TAG_NAME=$(git describe --tags --abbrev=0)
+
+gh release create "${TAG_NAME}" \
+  --title "Release ${TAG_NAME}" \
+  --notes "Release ${TAG_NAME}" \
+  --verify-tag

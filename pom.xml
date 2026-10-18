@@ -4,7 +4,7 @@
     <groupId>com.konghq</groupId>
     <artifactId>unirest-java-parent</artifactId>
     <packaging>pom</packaging>
-    <version>4.2.8-SNAPSHOT</version>
+    <version>4.10.3-SNAPSHOT</version>
     <name>unirest</name>
     <description>Parent pom for unirest packages</description>
     <url>http://github.com/Kong/unirest-java/</url>
@@ -19,9 +19,10 @@
 
     <modules>
         <module>unirest</module>
-        <module>object-mapper-gson</module>
-        <module>object-mapper-jackson</module>
-        <module>unirest-mocks</module>
+        <module>unirest-modules-gson</module>
+        <module>unirest-modules-jackson</module>
+        <module>unirest-modules-jackson-legacy</module>
+        <module>unirest-modules-mocks</module>
         <module>unirest-bdd-tests</module>
         <module>unirest-java-bom</module>
         <!--<module>bad-maven-test</module>-->
@@ -30,11 +31,13 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <jackson.version>2.15.2</jackson.version>
+        <jackson.version>3.1.1</jackson.version>
         <main.dir>${project.basedir}</main.dir>
-        <junit.version>5.10.0</junit.version>
-        <mockito.version>5.6.0</mockito.version>
-        <maven-checkstyle-plugin.version>3.3.0</maven-checkstyle-plugin.version>
+        <junit.version>6.0.3</junit.version>
+        <mockito.version>5.20.0</mockito.version>
+        <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
+        <assertj.version>3.27.7</assertj.version>
+        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
     </properties>
 
     <scm>
@@ -156,7 +159,7 @@
                     <dependency>
                         <groupId>com.puppycrawl.tools</groupId>
                         <artifactId>checkstyle</artifactId>
-                        <version>8.36.2</version>
+                        <version>10.26.1</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -180,7 +183,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.2</version>
+                <version>${maven-surefire-plugin.version}</version>
                 <configuration>
                     <argLine>-Duser.timezone=UTC</argLine>
                 </configuration>
@@ -188,12 +191,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.22.2</version>
+                <version>${maven-surefire-plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.6</version>
+                <version>0.8.15</version>
                 <executions>
                     <execution>
                         <id>default-prepare-agent</id>
@@ -238,21 +241,31 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.13</version>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.8.0</version>
                 <extensions>true</extensions>
                 <configuration>
-                    <serverId>ossrh</serverId>
-                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                    <publishingServerId>central</publishingServerId>
+                    <autoPublish>true</autoPublish>
                 </configuration>
             </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.sonatype.plugins</groupId>-->
+<!--                <artifactId>nexus-staging-maven-plugin</artifactId>-->
+<!--                <version>1.6.13</version>-->
+<!--                <extensions>true</extensions>-->
+<!--                <configuration>-->
+<!--                    <serverId>ossrh</serverId>-->
+<!--                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>-->
+<!--                    <autoReleaseAfterClose>true</autoReleaseAfterClose>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.13.0</version>
                 <configuration>
                     <fork>true</fork>
                     <meminitial>128m</meminitial>
@@ -265,7 +278,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.2.1</version>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -278,9 +291,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.5.0</version>
+                <version>3.12.0</version>
                 <configuration>
                     <source>11</source>
+                    <doclint>all,-missing</doclint>
                 </configuration>
                 <executions>
                     <execution>
@@ -313,7 +327,14 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.25.1</version>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.assertj/assertj-guava -->
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-guava</artifactId>
+            <version>${assertj.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -337,14 +358,14 @@
         <dependency>
             <groupId>org.skyscreamer</groupId>
             <artifactId>jsonassert</artifactId>
-            <version>1.5.1</version>
+            <version>1.5.3</version>
             <scope>test</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>32.1.1-jre</version>
+            <version>33.5.0-jre</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -31,6 +31,7 @@ import java.nio.file.CopyOption;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -75,7 +76,17 @@ public interface HttpRequest<R extends HttpRequest>  {
     R basicAuth(String username, String password);
 
     /**
-     * The Accept header to send (e.g. application/json
+     * The Accept header to send (e.g. application/json)
+     * @param value a valid mime type for the Accept header
+     * @return this request builder
+     */
+    default R accept(ContentType value){
+        Objects.requireNonNull(value);
+        return accept(value.toString());
+    }
+
+    /**
+     * The Accept header to send (e.g. application/json)
      * @param value a valid mime type for the Accept header
      * @return this request builder
      */
@@ -174,11 +185,11 @@ public interface HttpRequest<R extends HttpRequest>  {
     R withObjectMapper(ObjectMapper mapper);
 
     /**
-     * Set a connect timeout for this request
+     * Set a timeout for this request
      * @param millies the time in millies
      * @return this request builder
      */
-    R connectTimeout(int millies);
+    R requestTimeout(int millies);
 
     /**
      * sets a download monitor for monitoring the response. this could be used for drawing a progress bar
@@ -420,7 +431,7 @@ public interface HttpRequest<R extends HttpRequest>  {
     /**
      * @return the connect timeout for this request
      */
-    int getConnectTimeout();
+    Integer getRequestTimeout();
 
     /**
      * @return a summary for the response, used in metrics

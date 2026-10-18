@@ -25,13 +25,17 @@
 
 package BehaviorTests;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.datatype.guava.GuavaModule;
 import com.google.common.base.Charsets;
+import com.google.common.collect.Multimap;
 import com.google.common.io.Resources;
 import kong.unirest.core.Client;
 import kong.unirest.core.Unirest;
 import kong.unirest.core.java.JavaClient;
+import org.assertj.guava.api.MultimapAssert;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,26 +44,23 @@ import java.io.InputStream;
 import java.net.*;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
-import java.security.KeyStore;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
+import static org.assertj.core.api.Fail.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class TestUtil {
-    private static final ObjectMapper om = new ObjectMapper();
-
-    static {
-        om.registerModule(new GuavaModule());
-    }
-
+    private static final ObjectMapper om = JsonMapper.builderWithJackson2Defaults().addModule(new GuavaModule()).build();
 
     public static <T> T readValue(String body, Class<T> as) {
         try {
             return om.readValue(body, as);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }
@@ -72,6 +73,14 @@ class TestUtil {
         try {
             return new File(MockServer.class.getResource(name).toURI());
         } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static InputStream rezInput(String name) {
+        try {
+            return MockServer.class.getResourceAsStream(name);
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -104,14 +113,6 @@ class TestUtil {
         return map;
     }
 
-    public static KeyStore readStore() throws Exception {
-        try (InputStream keyStoreStream = TestUtil.class.getResourceAsStream("/certs/badssl.com-client.p12")) {
-            KeyStore keyStore = KeyStore.getInstance("PKCS12");
-            keyStore.load(keyStoreStream, "badssl.com".toCharArray());
-            return keyStore;
-        }
-    }
-
     public static String getResource(String resourceName) {
         try {
             return Resources.toString(Resources.getResource(resourceName), Charsets.UTF_8);
@@ -142,5 +143,22 @@ class TestUtil {
                     }
                 }).build();
         return new JavaClient(Unirest.config(), client);
+    }
+
+    public static <K, V> MultimapAssert<K, V> assertMultiMap(final Multimap<K, V> actual) {
+        return org.assertj.guava.api.Assertions.assertThat(actual);
+    }
+
+    public static final class Matchers {
+        public static Consumer<HeaderAsserts.HeaderValue> isBase64Encoded() {
+            return h -> {
+              var value = h.getValue();
+              try {
+                  Base64.getDecoder().decode(value);
+              }catch (IllegalArgumentException e){
+                  fail("Header was not base64 encoded: " + value);
+              }
+            };
+        }
     }
 }

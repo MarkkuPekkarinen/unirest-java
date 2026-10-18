@@ -4,11 +4,12 @@
     <parent>
         <groupId>com.konghq</groupId>
         <artifactId>unirest-java-parent</artifactId>
-        <version>4.2.8-SNAPSHOT</version>
+        <version>4.10.3-SNAPSHOT</version>
     </parent>
 
     <description>Simplified, lightweight HTTP client library.</description>
     <artifactId>unirest-java-core</artifactId>
+    <name>unirest-java-core</name>
     <packaging>jar</packaging>
 
     <properties>
